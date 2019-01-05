@@ -4,6 +4,7 @@
 
 {% block content %}
   <a href="/">home</a>
+  <a href="/tippers/clear">clear</a>
 
   <ol>
     {% for tipper in tippers %}

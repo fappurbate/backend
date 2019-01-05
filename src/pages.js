@@ -8,4 +8,9 @@ module.exports = router => {
 
     return ctx.render('tippers.swig', { tippers });
   });
+
+  router.get('/tippers/clear', async ctx => {
+    await db.tippers.remove({}, { multi: true });
+    ctx.redirect('/tippers');
+  });
 };
