@@ -9,7 +9,8 @@ app.use(require('./render')());
 app.use(require('koa-body')());
 app.use(router.routes());
 
-router.get('/', async ctx => ctx.render('index'));
+require('./pages')(router);
+require('./api')(router);
 
 app.listen(config.port, () => {
   console.log(`Listening on port ${config.port}...`);
