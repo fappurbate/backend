@@ -4,6 +4,7 @@
   "description": "Different stuff for Chaturbate streaming.",
   "main": "src/main.js",
   "scripts": {
+    "start": "node src/main.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +19,13 @@
   "bugs": {
     "url": "https://github.com/kothique/chaturbate-backend/issues"
   },
-  "homepage": "https://github.com/kothique/chaturbate-backend#readme"
+  "homepage": "https://github.com/kothique/chaturbate-backend#readme",
+  "dependencies": {
+    "koa": "^2.6.2",
+    "koa-body": "^4.0.6",
+    "koa-logger": "^3.2.0",
+    "koa-router": "^7.4.0",
+    "koa-views": "^6.1.5",
+    "swig": "^1.4.2"
+  }
 }
