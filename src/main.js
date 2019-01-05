@@ -4,6 +4,7 @@ const config = require('./config');
 const app = new Koa;
 const router = require('koa-router')();
 
+app.use(require('@koa/cors')());
 app.use(require('koa-logger')());
 app.use(require('./render')());
 app.use(require('koa-body')());
