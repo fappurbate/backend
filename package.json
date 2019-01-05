@@ -1,0 +1,22 @@
+{
+  "name": "kothique-chaturbate-backend",
+  "version": "0.0.0",
+  "description": "Different stuff for Chaturbate streaming.",
+  "main": "src/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kothique/chaturbate-backend.git"
+  },
+  "keywords": [
+    "chaturbate"
+  ],
+  "author": "Kothique Felixx",
+  "license": "WTFPL",
+  "bugs": {
+    "url": "https://github.com/kothique/chaturbate-backend/issues"
+  },
+  "homepage": "https://github.com/kothique/chaturbate-backend#readme"
+}
