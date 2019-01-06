@@ -9,7 +9,7 @@ module.exports = router => {
   router.get('/:broadcaster', async ctx => {
     const { broadcaster } = ctx.params;
 
-    return ctx.render('broadcaster.swig', { broadcaster });
+    return ctx.render('profile.swig', { broadcaster });
   });
 
   router.get('/:broadcaster/tippers', async ctx => {
@@ -24,5 +24,11 @@ module.exports = router => {
 
     await db.tippers(broadcaster).then(store => store.remove({}, { multi: true }));
     ctx.redirect(`/${broadcaster}/tippers`);
+  });
+
+  router.get('/:broadcaster/animation', async ctx => {
+    const { broadcaster } = ctx.params;
+
+    return ctx.render('animation.swig', { broadcaster });
   });
 };

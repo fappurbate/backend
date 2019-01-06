@@ -7,4 +7,5 @@
 
   <a href="/">broadcasters</a>
   <a href="/{{ broadcaster }}/tippers">tippers</a>
+  <a href="/{{ broadcaster }}/animation">animation</a>
 {% endblock %}
