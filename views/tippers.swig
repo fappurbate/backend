@@ -3,8 +3,11 @@
 {% block title %}Tippers - Kothique Chaturbate Backend{% endblock %}
 
 {% block content %}
-  <a href="/">home</a>
-  <a href="/tippers/clear">clear</a>
+  <div class="title">Tippers - {{ broadcaster }}</div>
+
+  <a href="/">broadcasters</a>
+  <a href="/{{ broadcaster }}">profile</a>
+  <a href="/{{ broadcaster }}/tippers/clear">clear</a>
 
   <ol>
     {% for tipper in tippers %}

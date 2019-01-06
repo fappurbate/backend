@@ -2,14 +2,21 @@ const db = require('./db');
 
 module.exports = router => {
   router.post('/api/tips', async ctx => {
-    const { tipper, amount } = ctx.request.body;
+    const { broadcaster, tipper, amount } = ctx.request.body;
 
-    console.debug(`Received tip: ${amount}tkn from ${tipper}`);
+    if (!broadcaster) {
+      console.debug(`Broadcaster username expected.`);
+      ctx.throw(400, 'Broadcaster username expected.');
+    }
 
-    if (await db.tippers.findOne({ username: tipper })) {
-      await db.tippers.update({ username: tipper }, { $inc: { amount } });
+    console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
+
+    const dbTippers = await db.tippers(broadcaster);
+
+    if (await dbTippers.findOne({ username: tipper })) {
+      await dbTippers.update({ username: tipper }, { $inc: { amount } });
     } else {
-      await db.tippers.insert({
+      await dbTippers.insert({
         username: tipper,
         amount
       });

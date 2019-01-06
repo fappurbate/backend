@@ -1,7 +1,13 @@
 {% extends 'layout.swig' %}
 
-{% block content %}
-  <h3>Welcome to Kothique Chaturbate Backend!</h3>
+{% block title %}Kothique Chaturbate Backend{% endblock %}
 
-  <a href="/tippers">tippers</a>
+{% block content %}
+  <div class="title">Broadcasters</div>
+
+  <ul>
+    {% for broadcaster in broadcasters %}
+      <li><a href="/{{ broadcaster.username }}">{{ broadcaster.username }}</a></li>
+    {% endfor %}
+  </ul>
 {% endblock %}
