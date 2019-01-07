@@ -1,19 +1,15 @@
 const db = require('./db');
-const wss = require('./wss');
+const wssApp = require('./wss-app');
+const wssExt = require('./wss-ext');
 
 module.exports = router => {
-  router.post('/api/tips', async ctx => {
-    const { broadcaster, tipper, amount } = ctx.request.body;
-
-    if (!broadcaster) {
-      console.debug(`Broadcaster username expected.`);
-      ctx.throw(400, 'Broadcaster username expected.');
-    }
+  wssExt.messages.on('tip', async data => {
+    const { broadcaster, tipper, amount } = data;
 
     console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
 
-    // Send to the WSS
-    wss.sendTip(broadcaster, tipper, amount);
+    // Send tip to the app
+    wssApp.sendTip(broadcaster, tipper, amount);
 
     // Update the DB
     const dbTippers = await db.tippers(broadcaster);
@@ -26,7 +22,5 @@ module.exports = router => {
         amount
       });
     }
-
-    ctx.status = 200;
   });
 };

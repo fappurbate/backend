@@ -1,8 +1,9 @@
 const WebSocket = require('ws');
+const EventEmitter = require('events');
 const config = require('./config');
 
 const wss = new WebSocket.Server({
-  port: config.wsPort
+  port: config.wsAppPort
 });
 
 wss.broadcast = function (msg) {
@@ -10,20 +11,28 @@ wss.broadcast = function (msg) {
 }
 
 wss.on('listening', () => {
-  console.log(`WS Server: listening on port ${config.wsPort}`)
+  console.log(`WS App Server: listening on port ${config.wsAppPort}`)
 });
 
+const messages = new EventEmitter;
+
 wss.on('connection', ws => {
-  console.log('WS Server: client connected');
+  console.log('WS App Server: client connected');
 
   ws.on('close', (code, reason) => {
     console.log(
-      `WS Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
+      `WS App Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
     );
+  });
+
+  ws.on('message', data => {
+    const msg = JSON.parse(data);
+    messages.emit(msg.type, msg.data);
   });
 });
 
 module.exports = {
+  messages,
   sendTip: (broadcaster, tipper, amount) => {
     const msg = {
       type: 'tip',
