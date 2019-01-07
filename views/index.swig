@@ -3,11 +3,8 @@
 {% block title %}Kothique Chaturbate Backend{% endblock %}
 
 {% block content %}
-  <div class="title">Broadcasters</div>
+  <div class="title">Kothique Chaturbate Backend</div>
 
-  <ul>
-    {% for broadcaster in broadcasters %}
-      <li><a href="/{{ broadcaster.username }}">{{ broadcaster.username }}</a></li>
-    {% endfor %}
-  </ul>
+  <a href="/broadcasters">broadcasters</a>
+  <a href="/translations">translations</a>
 {% endblock %}

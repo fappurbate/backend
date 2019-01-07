@@ -5,7 +5,8 @@
 {% block content %}
   <div class="title">Tippers - {{ broadcaster }}</div>
 
-  <a href="/">broadcasters</a>
+  <a href="/">home</a>
+  <a href="/broadcasters">broadcasters</a>
   <a href="/{{ broadcaster }}">profile</a>
   <a href="/{{ broadcaster }}/tippers/clear">clear</a>
 

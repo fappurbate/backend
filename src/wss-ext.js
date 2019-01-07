@@ -33,10 +33,10 @@ wss.on('connection', ws => {
 
 module.exports = {
   messages,
-  sendTranslation(tabId, msgId, translation) {
+  sendTranslation(tabId, msgId, content) {
     const msg = {
       type: 'translation',
-      data: { tabId, msgId, translation }
+      data: { tabId, msgId, content }
     };
 
     wss.broadcast(JSON.stringify(msg));

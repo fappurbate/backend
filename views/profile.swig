@@ -5,7 +5,8 @@
 {% block content %}
   <div class="title">Profile - {{ broadcaster }}</div>
 
-  <a href="/">broadcasters</a>
+  <a href="/">home</a>
+  <a href="/broadcasters">broadcasters</a>
   <a href="/{{ broadcaster }}/tippers">tippers</a>
   <a href="/{{ broadcaster }}/animation">animation</a>
 {% endblock %}

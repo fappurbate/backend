@@ -3,8 +3,20 @@ const config = require('./config');
 
 module.exports = router => {
   router.get('/', async ctx => {
+    return ctx.render('index.swig');
+  });
+
+  router.get('/broadcasters', async ctx => {
     const broadcasters = await db.broadcasters.find().sort({ username: 1 });
-    return ctx.render('index.swig', { broadcasters });
+    return ctx.render('broadcasters.swig', { broadcasters });
+  });
+
+  router.get('/translations', async ctx => {
+    const requests = await db.translationRequests.find().sort({ createdAt: -1 });
+    return ctx.render('translations.swig', {
+      requests,
+      wsPort: config.wsAppPort
+    });
   });
 
   router.get('/:broadcaster', async ctx => {
@@ -32,7 +44,7 @@ module.exports = router => {
 
     return ctx.render('animation.swig', {
       broadcaster,
-      wsPort: config.wsPort
+      wsPort: config.wsAppPort
     });
   });
 };

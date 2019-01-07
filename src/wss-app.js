@@ -40,5 +40,13 @@ module.exports = {
     };
 
     wss.broadcast(JSON.stringify(msg));
+  },
+  sendTranslationRequest: (tabId, msgId, content) => {
+    const msg = {
+      type: 'translation-request',
+      data: { tabId, msgId, content }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
   }
 };

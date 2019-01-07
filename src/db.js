@@ -5,7 +5,8 @@ const config = require('./config');
 const createStore = name => Datastore.create(path.join(config.dbPath, `${name}.nedb`));
 
 const stores = {
-  broadcasters: createStore('broadcasters')
+  broadcasters: createStore('broadcasters'),
+  translationRequests: createStore('translation_requests')
 };
 
 async function addBroadcaster(broadcaster) {
@@ -29,6 +30,7 @@ function factoryGetBroadcasterStore(name) {
 }
 
 module.exports = {
-  broadcasters: createStore('broadcasters'),
+  broadcasters: stores.broadcasters,
+  translationRequests: stores.translationRequests,
   tippers: factoryGetBroadcasterStore('tippers')
 };

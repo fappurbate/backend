@@ -23,4 +23,34 @@ module.exports = router => {
       });
     }
   });
+
+  wssExt.messages.on('translation-request', async data => {
+    const { tabId, msgId, content } = data;
+
+    console.debug(`Translation request: ${content}`);
+
+    // Send request to the app
+    wssApp.sendTranslationRequest(tabId, msgId, content);
+
+    // Update the DB
+    await db.translationRequests.insert({
+      tabId,
+      msgId,
+      content,
+      createdAt: new Date()
+    });
+  });
+
+  wssApp.messages.on('translation', async data => {
+    const { tabId, msgId, content } = data;
+
+    console.debug(`Translation: ${content}`);
+    console.log(tabId, msgId);
+
+    // Send request to the extension
+    wssExt.sendTranslation(tabId, msgId, content);
+
+    // Update the DB
+    await db.translationRequests.remove({ tabId, msgId });
+  });
 };
