@@ -45,7 +45,6 @@ module.exports = router => {
     const { tabId, msgId, content } = data;
 
     console.debug(`Translation: ${content}`);
-    console.log(tabId, msgId);
 
     // Send request to the extension
     wssExt.sendTranslation(tabId, msgId, content);

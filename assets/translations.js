@@ -1,5 +1,6 @@
+const wsHost = document.querySelector('meta[data-name="ws-host"]').getAttribute('data-content');
 const wsPort = document.querySelector('meta[data-name="ws-port"]').getAttribute('data-content');
-const url = `ws://localhost:${wsPort}`;
+const url = `ws://${wsHost}:${wsPort}`;
 
 const alert = document.getElementById('alert');
 
