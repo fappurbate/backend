@@ -1,6 +1,8 @@
 const Koa = require('koa');
 const mount = require('koa-mount');
+const https = require('https');
 const path = require('path');
+const fs = require('fs');
 const config = require('./config');
 
 const app = new Koa;
@@ -21,6 +23,12 @@ app.use(require('koa-body')());
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-app.listen(config.port, () => {
-  console.log(`HTTP Server: listening on port ${config.port}...`);
+https.createServer(
+  {
+    key: fs.readFileSync(config.ssl.key),
+    cert: fs.readFileSync(config.ssl.cert)
+  },
+  app.callback()
+).listen(config.port, () => {
+  console.log(`HTTPS Server: listening on port ${config.port}...`);
 });

@@ -1,27 +1,33 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+const https = require('https');
+const fs = require('fs');
 const config = require('./config');
 
-const wss = new WebSocket.Server({
-  port: config.wsAppPort
+const server = https.createServer({
+  key: fs.readFileSync(config.ssl.key),
+  cert: fs.readFileSync(config.ssl.cert)
 });
+server.listen(config.wsAppPort);
+
+const wss = new WebSocket.Server({ server });
 
 wss.broadcast = function (msg) {
   this.clients.forEach(ws => ws.send(msg));
 }
 
 wss.on('listening', () => {
-  console.log(`WS App Server: listening on port ${config.wsAppPort}`)
+  console.log(`WSS App Server: listening on port ${config.wsAppPort}`)
 });
 
 const messages = new EventEmitter;
 
 wss.on('connection', ws => {
-  console.log('WS App Server: client connected');
+  console.log('WSS App Server: client connected');
 
   ws.on('close', (code, reason) => {
     console.log(
-      `WS App Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
+      `WSS App Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
     );
   });
 

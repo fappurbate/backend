@@ -1,6 +1,6 @@
 const wsHost = document.querySelector('meta[data-name="ws-host"]').getAttribute('data-content');
 const wsPort = document.querySelector('meta[data-name="ws-port"]').getAttribute('data-content');
-const url = `ws://${wsHost}:${wsPort}`;
+const url = `wss://${wsHost}:${wsPort}`;
 
 const alert = document.getElementById('alert');
 
@@ -66,7 +66,7 @@ async function spawnNotification(title, options = undefined) {
     return new Notification(title, options);
   } else if (Notification.permission !== 'denied') {
     if (await Notification.requestPermission() === 'granted') {
-      return Notification(title, options);
+      return new Notification(title, options);
     }
   }
 }
