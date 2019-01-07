@@ -1,4 +1,5 @@
 const db = require('./db');
+const config = require('./config');
 
 module.exports = router => {
   router.get('/', async ctx => {
@@ -29,6 +30,9 @@ module.exports = router => {
   router.get('/:broadcaster/animation', async ctx => {
     const { broadcaster } = ctx.params;
 
-    return ctx.render('animation.swig', { broadcaster });
+    return ctx.render('animation.swig', {
+      broadcaster,
+      wsPort: config.wsPort
+    });
   });
 };

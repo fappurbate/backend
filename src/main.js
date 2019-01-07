@@ -22,5 +22,5 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 app.listen(config.port, () => {
-  console.log(`Listening on port ${config.port}...`);
+  console.log(`HTTP Server: listening on port ${config.port}...`);
 });

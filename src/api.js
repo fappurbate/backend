@@ -1,4 +1,5 @@
 const db = require('./db');
+const wss = require('./wss');
 
 module.exports = router => {
   router.post('/api/tips', async ctx => {
@@ -11,6 +12,10 @@ module.exports = router => {
 
     console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
 
+    // Send to the WSS
+    wss.sendTip(broadcaster, tipper, amount);
+
+    // Update the DB
     const dbTippers = await db.tippers(broadcaster);
 
     if (await dbTippers.findOne({ username: tipper })) {
