@@ -27,7 +27,7 @@ module.exports = router => {
   wssExt.messages.on('translation-request', async data => {
     const { tabId, msgId, content } = data;
 
-    console.debug(`Translation request: ${content}`);
+    console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
 
     // Send request to the app
     wssApp.sendTranslationRequest(tabId, msgId, content);
@@ -41,6 +41,23 @@ module.exports = router => {
     });
   });
 
+  wssExt.messages.on('cancel-translation-request', async data => {
+    const { tabId, msgId } = data;
+
+    console.debug(`Cancel translation request (${tabId}, ${msgId}).`);
+
+    // Send request to the app
+    wssApp.sendCancelTranslationRequest(tabId, msgId);
+
+    // Update the DB
+    console.log(await db.translationRequests.findOne({ tabId, msgId }));
+    console.log('removing ' +tabId+' '+msgId);
+    console.log(typeof tabId);
+    console.log(typeof msgId);
+    const res = await db.translationRequests.remove({ tabId, msgId }, { multi: true });
+    console.log(res);
+  });
+
   wssApp.messages.on('translation', async data => {
     const { tabId, msgId, content } = data;
 
@@ -50,6 +67,6 @@ module.exports = router => {
     wssExt.sendTranslation(tabId, msgId, content);
 
     // Update the DB
-    await db.translationRequests.remove({ tabId, msgId });
+    await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 };

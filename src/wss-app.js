@@ -54,5 +54,13 @@ module.exports = {
     };
 
     wss.broadcast(JSON.stringify(msg));
+  },
+  sendCancelTranslationRequest: (tabId, msgId) => {
+    const msg = {
+      type: 'cancel-translation-request',
+      data: { tabId, msgId }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
   }
 };

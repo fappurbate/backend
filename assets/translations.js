@@ -18,7 +18,7 @@ ws.addEventListener('message', async event => {
   const { type, data } = JSON.parse(event.data);
 
   if (type === 'translation-request') {
-    alert.innerHTML = 'new stuff is here!';
+    alert.innerHTML = 'something changed!';
     const notification = await spawnNotification('New Translation Request', {
       body: data.content,
       icon: '/assets/logo.png',
@@ -33,6 +33,8 @@ ws.addEventListener('message', async event => {
         notification.close();
       });
     }
+  } else if (type === 'cancel-translation-request') {
+    alert.innerHTML = 'something changed!';
   }
 });
 
