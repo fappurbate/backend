@@ -50,12 +50,7 @@ module.exports = router => {
     wssApp.sendCancelTranslationRequest(tabId, msgId);
 
     // Update the DB
-    console.log(await db.translationRequests.findOne({ tabId, msgId }));
-    console.log('removing ' +tabId+' '+msgId);
-    console.log(typeof tabId);
-    console.log(typeof msgId);
-    const res = await db.translationRequests.remove({ tabId, msgId }, { multi: true });
-    console.log(res);
+    await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 
   wssApp.messages.on('translation', async data => {
