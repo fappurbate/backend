@@ -24,7 +24,7 @@ module.exports = router => {
     }
   });
 
-  wssExt.messages.on('translation-request', async data => {
+  wssExt.messages.on('request-translation', async data => {
     const { tabId, msgId, content } = data;
 
     console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
@@ -41,7 +41,7 @@ module.exports = router => {
     });
   });
 
-  wssExt.messages.on('cancel-translation-request', async data => {
+  wssExt.messages.on('request-cancel-translation', async data => {
     const { tabId, msgId } = data;
 
     console.debug(`Cancel translation request (${tabId}, ${msgId}).`);

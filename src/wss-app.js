@@ -49,7 +49,7 @@ module.exports = {
   },
   sendTranslationRequest: (tabId, msgId, content) => {
     const msg = {
-      type: 'translation-request',
+      type: 'request-translation',
       data: { tabId, msgId, content }
     };
 
@@ -57,7 +57,7 @@ module.exports = {
   },
   sendCancelTranslationRequest: (tabId, msgId) => {
     const msg = {
-      type: 'cancel-translation-request',
+      type: 'request-cancel-translation',
       data: { tabId, msgId }
     };
 
