@@ -1,0 +1,10 @@
+{
+  "port": 8887,
+  "wsAppPort": 8888,
+  "wsExtPort": 8889,
+  "dbPath": "./db",
+  "ssl": {
+    "key": "./key.pem",
+    "cert": "./cert.pem"
+  }
+}
