@@ -3,7 +3,7 @@ const wssApp = require('./wss-app');
 const wssExt = require('./wss-ext');
 
 module.exports = router => {
-  wssExt.messages.on('tip', async data => {
+  wssExt.events.on('tip', async data => {
     const { broadcaster, tipper, amount } = data;
 
     console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
@@ -17,7 +17,7 @@ module.exports = router => {
     );
   });
 
-  wssExt.messages.on('request-translation', async data => {
+  wssExt.events.on('request-translation', async data => {
     const { tabId, msgId, content } = data;
 
     console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
@@ -34,7 +34,7 @@ module.exports = router => {
     });
   });
 
-  wssExt.messages.on('request-cancel-translation', async data => {
+  wssExt.events.on('request-cancel-translation', async data => {
     const { tabId, msgId } = data;
 
     console.debug(`Cancel translation request (${tabId}, ${msgId}).`);
@@ -46,7 +46,7 @@ module.exports = router => {
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 
-  wssApp.messages.on('translation', async data => {
+  wssApp.events.on('translation', async data => {
     const { tabId, msgId, content } = data;
 
     console.debug(`Translation: ${content}`);

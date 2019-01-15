@@ -14,11 +14,19 @@ ws.addEventListener('close', () => {
 });
 
 ws.addEventListener('message', event => {
-  const { type, data } = JSON.parse(event.data);
+  const msg = JSON.parse(event.data);
 
-  if (type === 'tip') {
-    number.innerHTML = data.amount;
-    number.style.opacity = 100;
-    setTimeout(() => number.style.opacity = 0, 1000);
+  if (msg.type === 'event') {
+    const { subject, data } = msg;
+
+    if (subject === 'tip') {
+      number.innerHTML = data.amount;
+      number.style.opacity = 100;
+      setTimeout(() => number.style.opacity = 0, 1000);
+    }
+  } else if (msg.type === 'request') {
+    // TODO ...
+  } else if (msg.type === 'response') {
+    // TODO ...
   }
 });

@@ -14,7 +14,7 @@ wss.on('listening', () => {
   console.log(`WS Ext Server: listening on port ${config.wsExtPort}`)
 });
 
-const messages = new EventEmitter;
+const events = new EventEmitter;
 
 wss.on('connection', ws => {
   console.log('WS Ext Server: client connected');
@@ -27,15 +27,26 @@ wss.on('connection', ws => {
 
   ws.on('message', data => {
     const msg = JSON.parse(data);
-    messages.emit(msg.type, msg.data);
+
+    if (msg.type === 'event') {
+      const { subject, data } = msg;
+      events.emit(subject, data);
+    } else if (msg.type === 'request') {
+      const { subject, requestId } = msg;
+      // TODO ...
+    } else if (msg.type === 'response') {
+      const { subject, requestId } = msg;
+      // TODO ...
+    }
   });
 });
 
 module.exports = {
-  messages,
+  events,
   sendTranslation(tabId, msgId, content) {
     const msg = {
-      type: 'translation',
+      type: 'event',
+      subject: 'translation',
       data: { tabId, msgId, content }
     };
 

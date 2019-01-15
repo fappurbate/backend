@@ -20,7 +20,7 @@ wss.on('listening', () => {
   console.log(`WSS App Server: listening on port ${config.wsAppPort}`)
 });
 
-const messages = new EventEmitter;
+const events = new EventEmitter;
 
 wss.on('connection', ws => {
   console.log('WSS App Server: client connected');
@@ -33,15 +33,24 @@ wss.on('connection', ws => {
 
   ws.on('message', data => {
     const msg = JSON.parse(data);
-    messages.emit(msg.type, msg.data);
+
+    if (msg.type === 'event') {
+      const { subject, data } = msg;
+      events.emit(subject, data);
+    } else if (msg.type === 'request') {
+      // TODO ...
+    } else if (msg.type === 'response') {
+      // TODO ...
+    }
   });
 });
 
 module.exports = {
-  messages,
+  events,
   sendTip: (broadcaster, tipper, amount) => {
     const msg = {
-      type: 'tip',
+      type: 'event',
+      subject: 'tip',
       data: { broadcaster, tipper, amount }
     };
 
@@ -49,7 +58,8 @@ module.exports = {
   },
   sendTranslationRequest: (tabId, msgId, content) => {
     const msg = {
-      type: 'request-translation',
+      type: 'event',
+      subject: 'request-translation',
       data: { tabId, msgId, content }
     };
 
@@ -57,7 +67,8 @@ module.exports = {
   },
   sendCancelTranslationRequest: (tabId, msgId) => {
     const msg = {
-      type: 'request-cancel-translation',
+      type: 'event',
+      subject: 'request-cancel-translation',
       data: { tabId, msgId }
     };
 

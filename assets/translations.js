@@ -14,26 +14,34 @@ ws.addEventListener('close', () => {
 });
 
 ws.addEventListener('message', async event => {
-  const { type, data } = JSON.parse(event.data);
+  const msg = JSON.parse(event.data);
 
-  if (type === 'request-translation') {
-    alert.innerHTML = 'something changed!';
-    const notification = await spawnNotification('New Translation Request', {
-      body: data.content,
-      icon: '/assets/logo.png',
-      requireInteraction: true,
-      renotify: true,
-      tag: 'kothique-chaturbate-backend-translation-request'
-    });
-    if (notification) {
-      notification.addEventListener('click', () => {
-        window.focus();
-        window.location.reload();
-        notification.close();
+  if (msg.type === 'event') {
+    const { subject, data } = msg;
+
+    if (subject === 'request-translation') {
+      alert.innerHTML = 'something changed!';
+      const notification = await spawnNotification('New Translation Request', {
+        body: data.content,
+        icon: '/assets/logo.png',
+        requireInteraction: true,
+        renotify: true,
+        tag: 'kothique-chaturbate-backend-translation-request'
       });
+      if (notification) {
+        notification.addEventListener('click', () => {
+          window.focus();
+          window.location.reload();
+          notification.close();
+        });
+      }
+    } else if (subject === 'request-cancel-translation') {
+      alert.innerHTML = 'something changed!';
     }
-  } else if (type === 'request-cancel-translation') {
-    alert.innerHTML = 'something changed!';
+  } else if (msg.type === 'request') {
+    // TODO ...
+  } else if (msg.type === 'response') {
+    // TODO ...
   }
 });
 
@@ -46,7 +54,8 @@ document.querySelectorAll('.translation-request').forEach(form => {
   const link = form.querySelector('.send-link');
   link.addEventListener('click', () => {
     ws.send(JSON.stringify({
-      type: 'translation',
+      type: 'event',
+      subject: 'translation',
       data: {
         msgId,
         tabId,
