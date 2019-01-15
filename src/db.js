@@ -9,11 +9,8 @@ const stores = {
   translationRequests: createStore('translation_requests')
 };
 
-async function addBroadcaster(broadcaster) {
-  if (!await stores.broadcasters.findOne({ username: broadcaster })) {
-    await stores.broadcasters.insert({ username: broadcaster });
-    console.log(`Added new broadcaster: ${broadcaster}`);
-  }
+async function ensureBroadcaster(broadcaster) {
+  await stores.broadcasters.update({ username: broadcaster }, { $set: {} }, { upsert: true });
 }
 
 function factoryGetBroadcasterStore(name) {
@@ -22,7 +19,7 @@ function factoryGetBroadcasterStore(name) {
   }
 
   return async broadcaster => {
-    await addBroadcaster(broadcaster);
+    await ensureBroadcaster(broadcaster);
 
     return stores[name][broadcaster]
       || (stores[name][broadcaster] = createStore(`${broadcaster}_${name}`));

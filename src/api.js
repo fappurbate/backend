@@ -12,16 +12,9 @@ module.exports = router => {
     wssApp.sendTip(broadcaster, tipper, amount);
 
     // Update the DB
-    const dbTippers = await db.tippers(broadcaster);
-
-    if (await dbTippers.findOne({ username: tipper })) {
-      await dbTippers.update({ username: tipper }, { $inc: { amount } });
-    } else {
-      await dbTippers.insert({
-        username: tipper,
-        amount
-      });
-    }
+    await db.tippers(broadcaster).then(store =>
+      store.update({ username: tipper }, { $inc: { amount } }, { upsert: true })
+    );
   });
 
   wssExt.messages.on('request-translation', async data => {
