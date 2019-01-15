@@ -3,7 +3,6 @@
 {% block title %}Translations - Kothique Chaturbate Backend{% endblock %}
 
 {% block head %}
-  <meta data-name="ws-host" data-content="{{ wsHost }}" />
   <meta data-name="ws-port" data-content="{{ wsPort }}" />
 
   <style>

@@ -15,7 +15,6 @@ module.exports = router => {
     const requests = await db.translationRequests.find().sort({ createdAt: -1 });
     return ctx.render('translations.swig', {
       requests,
-      wsHost: config.wsAppHost,
       wsPort: config.wsAppPort
     });
   });
@@ -45,7 +44,6 @@ module.exports = router => {
 
     return ctx.render('animation.swig', {
       broadcaster,
-      wsHost: config.wsAppHost,
       wsPort: config.wsAppPort
     });
   });

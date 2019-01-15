@@ -28,7 +28,6 @@ const result = module.exports = lodash.merge(
   {
     port: 8887,
     wsAppPort: 8888,
-    wsAppHost: '192.168.0.101',
     wsExtPort: 8889,
     dbPath: './db'
   },
