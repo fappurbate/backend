@@ -1,5 +1,7 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+const { CustomError } = require('./errors');
+const RequestTarget = require('./util/request-target');
 const https = require('https');
 const fs = require('fs');
 const config = require('./config');
@@ -20,10 +22,35 @@ wss.on('listening', () => {
   console.log(`WSS App Server: listening on port ${config.wsAppPort}`)
 });
 
-const events = new EventEmitter;
+const eventHandlers = new EventEmitter;
+const requestHandlers = new RequestTarget;
+
+const requests = {};
 
 wss.on('connection', ws => {
-  console.log('WSS App Server: client connected');
+  console.log('WSS App Server: client connected.');
+
+  let nextRequestId = 0;
+  const requests = {};
+
+  ws.request = async function (subject, data) {
+    const requestId = nextRequestId++;
+    const msg = {
+      type: 'request',
+      requestId,
+      subject,
+      ...data && { data }
+    };
+
+    ws.send(JSON.stringify(msg));
+
+    return new Promise((resolve, reject) => {
+      requests[requestId] = {
+        succeed: resolve,
+        fail: reject
+      };
+    });
+  };
 
   ws.on('close', (code, reason) => {
     console.log(
@@ -31,22 +58,60 @@ wss.on('connection', ws => {
     );
   });
 
-  ws.on('message', data => {
+  ws.on('message', async data => {
     const msg = JSON.parse(data);
 
     if (msg.type === 'event') {
       const { subject, data } = msg;
-      events.emit(subject, data);
+      eventHandlers.emit(subject, data);
     } else if (msg.type === 'request') {
-      // TODO ...
+      const { subject, requestId, data } = msg;
+
+      try {
+        const result = await requestHandlers.request(subject, data);
+        const msg = {
+          type: 'response',
+          requestId,
+          ...result && { data: result }
+        };
+
+        ws.send(JSON.stringify(msg));
+      } catch (error) {
+        const msg = {
+          type: 'response',
+          requestId,
+          error: error.message,
+          ...error.data && { data: error.data }
+        };
+
+        ws.send(JSON.stringify(msg));
+      }
     } else if (msg.type === 'response') {
-      // TODO ...
+      const { subject, requestId } = msg;
+
+      const callbacks = requests[requestId];
+      if (!callbacks) {
+        console.warn(`Got response to unknown request: ${requestId}.`);
+        return;
+      } else {
+        delete requests[requestId];
+      }
+      const { succeed, fail } = callbacks;
+
+      if (msg.error) {
+        const { error, data } = msg;
+        fail(new CustomError(error, data));
+      } else {
+        const { data } = msg;
+        succeed(data);
+      }
     }
   });
 });
 
 module.exports = {
-  events,
+  events: eventHandlers,
+  requests: requestHandlers,
   sendTip: (broadcaster, tipper, amount) => {
     const msg = {
       type: 'event',
