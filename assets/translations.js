@@ -23,7 +23,7 @@ ws.addEventListener('message', async event => {
       alert.innerHTML = 'something changed!';
       const notification = await spawnNotification('New Translation Request', {
         body: data.content,
-        icon: '/assets/logo.png',
+        icon: '/assets/images/logo.png',
         requireInteraction: true,
         renotify: true,
         tag: 'kothique-chaturbate-backend-translation-request'
