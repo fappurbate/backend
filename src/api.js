@@ -1,6 +1,7 @@
 const db = require('./db');
 const wssApp = require('./wss-app');
 const wssExt = require('./wss-ext');
+const { CustomError } = require('./common/errors');
 
 module.exports = router => {
   wssExt.events.on('tip', async data => {
@@ -44,6 +45,17 @@ module.exports = router => {
 
     // Update the DB
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
+  });
+
+  wssExt.requests.on('tipper-info', async data => {
+    const { broadcaster, tipper } = data;
+
+    const tipperInfo = await db.tippers(broadcaster).then(store => store.findOne({ username: tipper }));
+    if (!tipperInfo) {
+      throw new CustomError('no tipper info found');
+    } else {
+      return tipperInfo;
+    }
   });
 
   wssApp.events.on('translation', async data => {

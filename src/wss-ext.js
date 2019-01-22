@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
-const { CustomError } = require('./errors');
-const RequestTarget = require('./util/request-target');
+const { CustomError } = require('./common/errors');
+const RequestTarget = require('./common/request-target');
 const config = require('./config');
 
 const wss = new WebSocket.Server({
@@ -18,8 +18,6 @@ wss.on('listening', () => {
 
 const eventHandlers = new EventEmitter;
 const requestHandlers = new RequestTarget;
-
-const requests = {};
 
 wss.on('connection', ws => {
   console.log('WS Ext Server: client connected.');
