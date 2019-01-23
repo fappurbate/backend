@@ -4,6 +4,18 @@ const wssExt = require('./wss-ext');
 const { CustomError } = require('./common/errors');
 
 module.exports = router => {
+  router.get('/api/broadcasters', async ctx => {
+    const broadcasters = await db.broadcasters.find().sort({ username: 1 });
+    ctx.body = broadcasters;
+  });
+
+  router.get('/api/broadcaster/:broadcaster/tippers', async ctx => {
+    const { broadcaster } = ctx.params;
+
+    const tippers = await db.tippers(broadcaster).then(store => store.find().sort({ amount: -1 }));
+    ctx.body = tippers;
+  });
+
   wssExt.events.on('tip', async data => {
     const { broadcaster, tipper, amount } = data;
 
