@@ -119,11 +119,11 @@ module.exports = {
 
     wss.broadcast(JSON.stringify(msg));
   },
-  sendTranslationRequest: (tabId, msgId, content) => {
+  sendTranslationRequest: (broadcaster, tabId, msgId, content) => {
     const msg = {
       type: 'event',
       subject: 'request-translation',
-      data: { tabId, msgId, content }
+      data: { broadcaster, tabId, msgId, content }
     };
 
     wss.broadcast(JSON.stringify(msg));

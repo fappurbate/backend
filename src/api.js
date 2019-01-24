@@ -16,6 +16,13 @@ module.exports = router => {
     ctx.body = tippers;
   });
 
+  router.get('/api/broadcaster/:broadcaster/translations', async ctx => {
+    const { broadcaster } = ctx.params;
+
+    const requests = await db.translationRequests.find({ broadcaster }).sort({ createdAt: -1 });
+    ctx.body = requests;
+  });
+
   wssExt.events.on('tip', async data => {
     const { broadcaster, tipper, amount } = data;
 
@@ -31,15 +38,16 @@ module.exports = router => {
   });
 
   wssExt.events.on('request-translation', async data => {
-    const { tabId, msgId, content } = data;
+    const { broadcaster, tabId, msgId, content } = data;
 
     console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
 
     // Send request to the app
-    wssApp.sendTranslationRequest(tabId, msgId, content);
+    wssApp.sendTranslationRequest(broadcaster, tabId, msgId, content);
 
     // Update the DB
     await db.translationRequests.insert({
+      broadcaster,
       tabId,
       msgId,
       content,
