@@ -54,6 +54,11 @@ module.exports = router => {
 
     console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
 
+    if (!broadcaster) {
+      console.error(`Tip: no broadcaster specified! (tipper: ${tipper}, amount: ${amount})`);
+      return;
+    }
+
     // Send tip to the app
     wssApp.sendTip(broadcaster, tipper, amount);
 

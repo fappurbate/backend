@@ -8,7 +8,6 @@ const config = require('./config');
 const app = new Koa;
 
 const router = require('koa-router')();
-require('./pages')(router);
 require('./api')(router);
 
 app.use(require('koa-logger')());
