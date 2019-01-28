@@ -32,7 +32,6 @@
     "lodash": "^4.17.11",
     "nedb": "^1.8.0",
     "nedb-promises": "^3.0.2",
-    "swig": "^1.4.2",
     "ws": "^6.1.2"
   },
   "devDependencies": {
