@@ -1,7 +1,11 @@
+const asyncBusboy = require('async-busboy');
+
 const db = require('./db');
 const wssApp = require('./wss-app');
 const wssExt = require('./wss-ext');
 const { CustomError } = require('./common/errors');
+const config = require('./config');
+const extensions = require('./extensions');
 
 module.exports = router => {
   router.get('/api/broadcasters', async ctx => {
@@ -21,6 +25,28 @@ module.exports = router => {
 
     const requests = await db.translationRequests.find({ broadcaster }).sort({ createdAt: -1 });
     ctx.body = requests;
+  });
+
+  router.get('/api/extensions', async ctx => {
+    const extensions = await db.extensions.find().sort({ createdAt: -1 });
+    ctx.body = extensions;
+  });
+
+  router.post('/api/extensions', async ctx => {
+    const { files } = await asyncBusboy(ctx.req);
+
+    if (files.length !== 1) {
+      return ctx.throw(500, 'Just one file is required.');
+    }
+
+    const packageStream = files[0];
+    try {
+      const id = await extensions.load(packageStream);
+      ctx.body = { id };
+    } catch (error) {
+      console.error(`Failed to load extension.`, error);
+      ctx.throw(400, error.message);
+    }
   });
 
   wssExt.events.on('tip', async data => {

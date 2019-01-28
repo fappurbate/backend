@@ -3,6 +3,7 @@
   "wsAppPort": 8888,
   "wsExtPort": 8889,
   "dbPath": "./db",
+  "extensionsPath": "./extensions",
   "ssl": {
     "key": "./key.pem",
     "cert": "./cert.pem"

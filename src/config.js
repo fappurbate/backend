@@ -1,5 +1,5 @@
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const lodash = require('lodash');
 
 const config = (() => {
@@ -29,7 +29,8 @@ const result = module.exports = lodash.merge(
     port: 8887,
     wsAppPort: 8888,
     wsExtPort: 8889,
-    dbPath: './db'
+    dbPath: './db',
+    extensionsPath: './extensions'
   },
   config,
   {
@@ -37,6 +38,7 @@ const result = module.exports = lodash.merge(
     wsAppPort: process.env.WS_APP_PORT,
     wsExtPort: process.env.WS_EXT_PORT,
     dbPath: process.env.DB_PATH,
+    extensionsPath: process.env.EXTENSIONS_PATH,
     ssl: {
       key: process.env.SSL_KEY,
       cert: process.env.SSL_CERT
@@ -51,5 +53,6 @@ if (!result.ssl || !result.ssl.key || !result.ssl.cert) {
 }
 
 result.dbPath = path.join(__dirname, '..', result.dbPath);
+result.extensionsPath = path.join(__dirname, '..', result.extensionsPath);
 result.ssl.key = path.join(__dirname, '..', result.ssl.key);
 result.ssl.cert = path.join(__dirname, '..', result.ssl.cert);

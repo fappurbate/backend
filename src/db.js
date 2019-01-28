@@ -6,6 +6,7 @@ const createStore = name => Datastore.create(path.join(config.dbPath, `${name}.n
 
 const stores = {
   broadcasters: createStore('broadcasters'),
+  extensions: createStore('extensions'),
   translationRequests: createStore('translation_requests')
 };
 
@@ -29,5 +30,6 @@ function factoryGetBroadcasterStore(name) {
 module.exports = {
   broadcasters: stores.broadcasters,
   translationRequests: stores.translationRequests,
+  extensions: stores.extensions,
   tippers: factoryGetBroadcasterStore('tippers')
 };

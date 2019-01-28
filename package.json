@@ -22,6 +22,9 @@
   "homepage": "https://github.com/kothique/chaturbate-backend#readme",
   "dependencies": {
     "@koa/cors": "^2.2.3",
+    "ajv": "^6.7.0",
+    "async-busboy": "^0.7.0",
+    "fs-extra": "^7.0.1",
     "koa": "^2.6.2",
     "koa-body": "^4.0.6",
     "koa-logger": "^3.2.0",
@@ -33,6 +36,8 @@
     "nedb": "^1.8.0",
     "nedb-promises": "^3.0.2",
     "swig": "^1.4.2",
+    "tar-fs": "^1.16.3",
+    "tmp": "0.0.33",
     "ws": "^6.1.2"
   },
   "devDependencies": {
