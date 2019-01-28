@@ -1,0 +1,7 @@
+{
+  "name": "Test Extension",
+  "description": "I'm a super extension, and I'm really cool. Test me until I squirt, please...",
+  "background": {
+    "scripts": ["bg.js"]
+  }
+}

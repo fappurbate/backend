@@ -110,7 +110,7 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  sendTip: (broadcaster, tipper, amount) => {
+  onTip: (broadcaster, tipper, amount) => {
     const msg = {
       type: 'event',
       subject: 'tip',
@@ -133,6 +133,24 @@ module.exports = {
       type: 'event',
       subject: 'request-cancel-translation',
       data: { tabId, msgId }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
+  },
+  onExtensionStart: extension => {
+    const msg = {
+      type: 'event',
+      subject: 'extension-start',
+      data: { extension }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
+  },
+  onExtensionStop: extension => {
+    const msg = {
+      type: 'event',
+      subject: 'extension-stop',
+      data: { extension }
     };
 
     wss.broadcast(JSON.stringify(msg));

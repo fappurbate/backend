@@ -41,7 +41,7 @@ module.exports = router => {
 
     const packageStream = files[0];
     try {
-      const id = await extensions.load(packageStream);
+      const id = await extensions.install(packageStream);
       ctx.body = { id };
     } catch (error) {
       console.error(`Failed to load extension.`, error);
@@ -75,7 +75,7 @@ module.exports = router => {
     }
 
     // Send tip to the app
-    wssApp.sendTip(broadcaster, tipper, amount);
+    wssApp.onTip(broadcaster, tipper, amount);
 
     // Update the DB
     await db.tippers(broadcaster).then(store =>
