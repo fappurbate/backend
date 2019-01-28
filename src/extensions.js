@@ -208,6 +208,16 @@ async function extractPackage(packageStream) {
   return tmpDir.name;
 }
 
+async function remove(id) {
+  const numRemoved = await db.extensions.remove({ _id: id });
+  if (numRemoved === 0) {
+    throw new CustomError(`Couldn't find extension ${id}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
+  }
+
+  await fs.remove(path.join(config.extensionsPath, id));
+}
+
 module.exports = {
-  load
+  load,
+  remove
 };

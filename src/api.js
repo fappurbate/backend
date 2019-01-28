@@ -49,6 +49,21 @@ module.exports = router => {
     }
   });
 
+  router.delete('/api/extension/:id', async ctx => {
+    const { id } = ctx.params;
+
+    try {
+      await extensions.remove(id);
+      ctx.status = 200;
+    } catch (error) {
+      if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
+        ctx.throw(404, 'Extension not found.');
+      } else {
+        ctx.throw(500, error.message);
+      }
+    }
+  });
+
   wssExt.events.on('tip', async data => {
     const { broadcaster, tipper, amount } = data;
 
