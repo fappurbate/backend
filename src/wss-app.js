@@ -1,10 +1,11 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
-const { CustomError } = require('./common/errors');
-const RequestTarget = require('./common/request-target');
 const https = require('https');
 const fs = require('fs-extra');
-const config = require('./config');
+
+const { CustomError } = require('./common/errors');
+const RequestTarget = require('./common/request-target');
+const config = require('./common/config');
 
 const server = https.createServer({
   key: fs.readFileSync(config.ssl.key),

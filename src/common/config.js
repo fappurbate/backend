@@ -6,7 +6,7 @@ const config = (() => {
   let content;
 
   try {
-    content = fs.readFileSync(path.join(__dirname, '..', 'config.json'));
+    content = fs.readFileSync(path.join(__dirname, '..', '..', 'config.json'));
 
     try {
       return JSON.parse(content);
@@ -52,7 +52,7 @@ if (!result.ssl || !result.ssl.key || !result.ssl.cert) {
   process.exit(1);
 }
 
-result.dbPath = path.join(__dirname, '..', result.dbPath);
-result.extensionsPath = path.join(__dirname, '..', result.extensionsPath);
-result.ssl.key = path.join(__dirname, '..', result.ssl.key);
-result.ssl.cert = path.join(__dirname, '..', result.ssl.cert);
+result.dbPath = path.join(__dirname, '..', '..', result.dbPath);
+result.extensionsPath = path.join(__dirname, '..', '..', result.extensionsPath);
+result.ssl.key = path.join(__dirname, '..', '..', result.ssl.key);
+result.ssl.cert = path.join(__dirname, '..', '..', result.ssl.cert);

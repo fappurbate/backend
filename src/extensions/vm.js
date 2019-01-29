@@ -4,7 +4,7 @@ const path = require('path');
 const { EventEmitter } = require('events');
 
 const { CustomError } = require('../common/errors');
-const config = require('../config');
+const config = require('../common/config');
 
 class VM extends EventEmitter {
   constructor(extension) {

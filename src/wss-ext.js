@@ -1,8 +1,9 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+
 const { CustomError } = require('./common/errors');
 const RequestTarget = require('./common/request-target');
-const config = require('./config');
+const config = require('./common/config');
 
 const wss = new WebSocket.Server({
   port: config.wsExtPort

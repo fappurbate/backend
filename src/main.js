@@ -3,7 +3,8 @@ const mount = require('koa-mount');
 const https = require('https');
 const path = require('path');
 const fs = require('fs-extra');
-const config = require('./config');
+
+const config = require('./common/config');
 
 const app = new Koa;
 

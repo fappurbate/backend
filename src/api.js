@@ -1,10 +1,10 @@
 const asyncBusboy = require('async-busboy');
 
-const db = require('./db');
+const db = require('./common/db');
+const { CustomError } = require('./common/errors');
+const config = require('./common/config');
 const wssApp = require('./wss-app');
 const wssExt = require('./wss-ext');
-const { CustomError } = require('./common/errors');
-const config = require('./config');
 const extensions = require('./extensions');
 
 module.exports = router => {

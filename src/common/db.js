@@ -1,8 +1,11 @@
 const Datastore = require('nedb-promises');
 const path = require('path');
+
 const config = require('./config');
 
-const createStore = name => Datastore.create(path.join(config.dbPath, `${name}.nedb`));
+const createStore = name => Datastore.create(
+  path.join(config.dbPath, `${name}.nedb`)
+);
 
 const stores = {
   broadcasters: createStore('broadcasters'),

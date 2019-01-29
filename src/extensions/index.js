@@ -1,10 +1,10 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-const db = require('../db');
+const db = require('../common/db');
 const { CustomError } = require('../common/errors');
+const config = require('../common/config');
 const wssApp = require('../wss-app');
-const config = require('../config');
 const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('./util');
 const { readManifest } = require('./manifest');
 const { VM } = require('./vm');

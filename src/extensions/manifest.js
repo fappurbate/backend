@@ -1,6 +1,7 @@
 const Ajv = require('ajv');
-const { loadExtensionFile } = require('./util');
+
 const { CustomError } = require('../common/errors');
+const { loadExtensionFile } = require('./util');
 
 const ajv = new Ajv;
 
@@ -14,7 +15,7 @@ const validate = ajv.compile({
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    backgroundScript: { type: 'string', },
+    backgroundScript: { type: 'string' },
     front: {
       type: 'object',
       additionalProperties: false,
@@ -50,7 +51,7 @@ const validate = ajv.compile({
         }
       },
       required: ['page']
-    },
+    }
   },
   required: ['name', 'description', 'backgroundScript']
 });
