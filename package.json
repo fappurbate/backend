@@ -25,6 +25,7 @@
     "ajv": "^6.7.0",
     "async-busboy": "^0.7.0",
     "fs-extra": "^7.0.1",
+    "isolated-vm": "^1.7.8",
     "koa": "^2.6.2",
     "koa-body": "^4.0.6",
     "koa-logger": "^3.2.0",
