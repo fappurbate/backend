@@ -15,7 +15,7 @@ server.listen(config.wsAppPort);
 const wss = new WebSocket.Server({ server });
 
 wss.broadcast = function (msg) {
-  this.clients.forEach(ws => ws.send(msg));
+  this.clients.forEach(ws => ws.readyState === WebSocket.OPEN && ws.send(msg));
 }
 
 wss.on('listening', () => {

@@ -27,9 +27,11 @@ module.exports = router => {
     ctx.body = requests;
   });
 
-  router.get('/api/extensions', async ctx => {
-    const extensions = await db.extensions.find().sort({ createdAt: -1 });
-    ctx.body = extensions;
+  router.get('/api/broadcaster/:broadcaster/extensions', async ctx => {
+    const { broadcaster } = ctx.params;
+
+    const result = await extensions.queryForBroadcaster(broadcaster);
+    ctx.body = result;
   });
 
   router.post('/api/extensions', async ctx => {
@@ -44,7 +46,7 @@ module.exports = router => {
       const id = await extensions.install(packageStream);
       ctx.body = { id };
     } catch (error) {
-      console.error(`Failed to load extension.`, error);
+      console.error(`Failed to install extension.`, error);
       ctx.throw(400, error.message);
     }
   });
@@ -56,6 +58,39 @@ module.exports = router => {
       await extensions.remove(id);
       ctx.status = 200;
     } catch (error) {
+      console.error(`Failed to remove extension.`, error);
+      if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
+        ctx.throw(404, 'Extension not found.');
+      } else {
+        ctx.throw(500, error.message);
+      }
+    }
+  });
+
+  router.post('/api/broadcaster/:broadcaster/extension/:extension/start', async ctx => {
+    const { extension: id, broadcaster } = ctx.params;
+
+    try {
+      await extensions.start(id, broadcaster);
+      ctx.status = 200;
+    } catch (error) {
+      console.error(`Failed to start extension.`, error);
+      if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
+        ctx.throw(404, 'Extension not found.');
+      } else {
+        ctx.throw(500, error.message);
+      }
+    }
+  });
+
+  router.post('/api/broadcaster/:broadcaster/extension/:extension/stop', async ctx => {
+    const { extension: id, broadcaster } = ctx.params;
+
+    try {
+      await extensions.stop(id, broadcaster);
+      ctx.status = 200;
+    } catch (error) {
+      console.error(`Failed to stop extension.`, error);
       if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
         ctx.throw(404, 'Extension not found.');
       } else {
