@@ -88,6 +88,8 @@ async function remove(arg) {
   }
 
   await fs.remove(path.join(config.extensionsPath, extension._id));
+
+  wssApp.onExtensionRemove(extension);
 }
 
 
@@ -115,7 +117,7 @@ async function start(arg, broadcaster) {
     vm
   };
 
-  wssApp.onExtensionStart(extension);
+  wssApp.onExtensionStart(extension, broadcaster);
 }
 
 async function stop(arg, broadcaster) {
@@ -135,7 +137,7 @@ async function stop(arg, broadcaster) {
   console.log(`Shutting down extension ${extension.name} (${extension._id})...`);
   vmInfo.vm.dispose();
 
-  wssApp.onExtensionStop(extension);
+  wssApp.onExtensionStop(extension, broadcaster);
 }
 
 async function queryForBroadcaster(broadcaster) {

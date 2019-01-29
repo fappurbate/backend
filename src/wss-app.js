@@ -137,20 +137,29 @@ module.exports = {
 
     wss.broadcast(JSON.stringify(msg));
   },
-  onExtensionStart: extension => {
+  onExtensionRemove: extension => {
     const msg = {
       type: 'event',
-      subject: 'extension-start',
+      subject: 'extension-remove',
       data: { extension }
     };
 
     wss.broadcast(JSON.stringify(msg));
   },
-  onExtensionStop: extension => {
+  onExtensionStart: (extension, broadcaster) => {
+    const msg = {
+      type: 'event',
+      subject: 'extension-start',
+      data: { extension, broadcaster }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
+  },
+  onExtensionStop: (extension, broadcaster) => {
     const msg = {
       type: 'event',
       subject: 'extension-stop',
-      data: { extension }
+      data: { extension, broadcaster }
     };
 
     wss.broadcast(JSON.stringify(msg));
