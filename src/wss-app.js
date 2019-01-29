@@ -138,6 +138,20 @@ module.exports = {
 
     wss.broadcast(JSON.stringify(msg));
   },
+  onExtensionInstall: extension => {
+    const msg = {
+      type: 'event',
+      subject: 'extension-install',
+      data: {
+        extension: {
+          ...extension,
+          running: false
+        }
+      }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
+  },
   onExtensionRemove: extension => {
     const msg = {
       type: 'event',
