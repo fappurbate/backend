@@ -93,6 +93,8 @@ module.exports = router => {
       console.error(`Failed to stop extension.`, error);
       if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
         ctx.throw(404, 'Extension not found.');
+      } else if (error.code === 'ERR_EXTENSION_ALREADY_STOPPED') {
+        ctx.status = 200;
       } else {
         ctx.throw(500, error.message);
       }

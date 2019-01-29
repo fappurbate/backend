@@ -1,8 +1,10 @@
 const Ajv = require('ajv');
+const { loadExtensionFile } = require('./util');
+const { CustomError } = require('../common/errors');
 
 const ajv = new Ajv;
 
-module.exports.validateManifest = ajv.compile({
+const validate = ajv.compile({
   $schema: 'http://json-schema.org/draft-07/schema#',
   $id: 'http://example.com/product.schema.json',
   title: 'Manifest',
@@ -12,17 +14,7 @@ module.exports.validateManifest = ajv.compile({
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    background: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        scripts: {
-          type: 'array',
-          items: { type: 'string' }
-        }
-      },
-      required: ['scripts']
-    },
+    backgroundScript: { type: 'string', },
     front: {
       type: 'object',
       additionalProperties: false,
@@ -60,5 +52,32 @@ module.exports.validateManifest = ajv.compile({
       required: ['page']
     },
   },
-  required: ['name', 'description']
+  required: ['name', 'description', 'backgroundScript']
 });
+
+module.exports.readManifest =
+async function readManifest(extensionPath) {
+  const manifestRaw = await loadExtensionFile(
+    extensionPath,
+    'manifest.json',
+    './manifest.json',
+    'ERR_LOAD_MANIFEST'
+  );
+
+  const manifest = (() => {
+    try {
+      return JSON.parse(manifestRaw);
+    } catch (error) {
+      console.error(`Couldn't parse manifest.json (${path}):`, error.message);
+      throw new CustomError('Failed to parse manifest.json.', { error }, 'ERR_PARSE_MANIFEST');
+    }
+  })();
+
+  const valid = validate(manifest);
+  if (!valid) {
+    console.error(`Invalid manifest.json:`, validate.errors);
+    throw new CustomError('Invalid manifest.json.', { errors }, 'ERR_INVALID_MANIFEST');
+  }
+
+  return manifest;
+}

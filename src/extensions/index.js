@@ -1,14 +1,13 @@
 const fs = require('fs-extra');
 const path = require('path');
-const { NodeVM, VMScript } = require('vm2');
 
 const db = require('../db');
 const { CustomError } = require('../common/errors');
 const wssApp = require('../wss-app');
 const config = require('../config');
-const { createAPI } = require('./api');
 const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('./util');
-const { validateManifest } = require('./validate-manifest');
+const { readManifest } = require('./manifest');
+const { VM } = require('./vm');
 
 const vmsByBroadcaster = {};
 
@@ -19,34 +18,14 @@ function getBroadcasterVMs(broadcaster) {
 async function install(packageStream) {
   const extensionPath = await extractPackage(packageStream);
 
-  const manifestRaw = await loadExtensionFile(
+  const manifest = await readManifest(extensionPath);
+
+  await tryLoadExtensionFile(
     extensionPath,
-    'manifest.json',
-    './manifest.json',
-    'ERR_LOAD_MANIFEST'
-  );
-
-  const manifest = (() => {
-    try {
-      return JSON.parse(manifestRaw);
-    } catch (error) {
-      console.error(`Couldn't parse manifest.json (${path}):`, error.message);
-      throw new CustomError('Failed to parse manifest.json.', { error }, 'ERR_PARSE_MANIFEST');
-    }
-  })();
-
-  const valid = validateManifest(manifest);
-  if (!valid) {
-    console.error(`Invalid manifest.json:`, validateManifest.errors);
-    throw new CustomError('Invalid manifest.json.', { errors }, 'ERR_INVALID_MANIFEST');
-  }
-
-  await Promise.all((manifest.background.scripts || []).map((script, index) => tryLoadExtensionFile(
-    extensionPath,
-    `background script ${index}`,
-    script,
+    'background script',
+    manifest.backgroundScript,
     'ERR_LOAD_BACKGROUND_SCRIPT'
-  )));
+  );
 
   for (const part of ['front', 'settings', 'stream']) {
     if (!manifest[part]) { break; }
@@ -118,40 +97,23 @@ async function start(arg, broadcaster) {
     throw new CustomError(`Couldn't find extension ${arg}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
   }
 
-  console.log(`Starting extension ${extension.name} (${extension._id})...`);
-
   const extensionPath = path.join(config.extensionsPath, extension._id);
 
   const vms = getBroadcasterVMs(broadcaster);
 
+  const vm = new VM(extension);
+  vm.on('error', async error => {
+    console.debug(`VM encountered an error:`, error);
+    await stop(extension, broadcaster);
+  });
+
+  console.log(`Starting extension ${extension.name} (${extension._id})...`);
+  await vm.start();
+
   const vmInfo = vms[extension._id] = {
     id: extension._id,
-    vm: new NodeVM({
-      console: 'redirect',
-      sandbox: {
-        kck: createAPI({ id: extension._id, broadcaster })
-      },
-      require: {
-        root: extensionPath,
-        context: 'sandbox'
-      }
-    })
+    vm
   };
-
-  const backgroundSource = await Promise.all(
-    extension.background.scripts.map(filename => path.join(extensionPath, filename))
-      .map(filepath => fs.readFile(filepath, { encoding: 'utf8' }))
-  ).then(scripts => scripts.join('\n\n'));
-
-  const backgroundScript = new VMScript(backgroundSource);
-
-  console.log(`Running background script for extension ${extension.name} (${extension._id})...`);
-  try {
-    vmInfo.vm.run(backgroundScript);
-  } catch (error) {
-    console.log(`Extension ${extension.name} (${extension._id}):`);
-    console.log(error);
-  }
 
   wssApp.onExtensionStart(extension);
 }
@@ -165,14 +127,13 @@ async function stop(arg, broadcaster) {
   const vms = getBroadcasterVMs(broadcaster);
 
   const vmInfo = vms[extension._id];
+  delete vms[extension._id];
   if (!vmInfo) {
-    throw new CustomError(`Couldn't stop extension which is not running.`)
+    throw new CustomError(`Couldn't stop extension which is not running.`, {}, 'ERR_EXTENSION_ALREADY_STOPPED');
   }
 
   console.log(`Shutting down extension ${extension.name} (${extension._id})...`);
-  delete vms[extension._id];
-  // TODO: stop the VM
-  // cannot do this for now, gotta use isolated-vm
+  vmInfo.vm.dispose();
 
   wssApp.onExtensionStop(extension);
 }
