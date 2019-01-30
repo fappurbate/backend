@@ -1,3 +1,4 @@
+const fs = require('fs-extra');
 const asyncBusboy = require('async-busboy');
 
 const db = require('./common/db');
@@ -93,12 +94,38 @@ module.exports = router => {
       console.error(`Failed to stop extension.`, error);
       if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
         ctx.throw(404, 'Extension not found.');
-      } else if (error.code === 'ERR_EXTENSION_ALREADY_STOPPED') {
-        ctx.status = 200;
       } else {
         ctx.throw(500, error.message);
       }
     }
+  });
+
+  router.get('/api/broadcaster/:broadcaster/extension/:extension/front', async ctx => {
+    const { broadcaster, extension: id } = ctx.params;
+
+    const page = await extensions.getFrontPage(id, broadcaster);
+    ctx.body = page;
+  });
+
+  router.get('/api/broadcaster/:broadcaster/extension/:extension/settings', async ctx => {
+    const { broadcaster, extension: id } = ctx.params;
+
+    const page = await extensions.getSettingsPage(id, broadcaster);
+    ctx.body = page;
+  });
+
+  router.get('/api/broadcaster/:broadcaster/extension/:extension/stream', async ctx => {
+    const { broadcaster, extension: id } = ctx.params;
+
+    const page = await extensions.getStreamPage(id, broadcaster);
+    ctx.body = page;
+  });
+
+  router.get('/api/broadcaster/:broadcaster/extensions/stream', async ctx => {
+    const { broadcaster } = ctx.params;
+
+    const pages = await extensions.getStreamPages(broadcaster);
+    ctx.body = pages;
   });
 
   wssExt.events.on('tip', async data => {

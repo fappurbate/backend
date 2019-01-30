@@ -5,14 +5,17 @@ const { EventEmitter } = require('events');
 
 const { CustomError } = require('../common/errors');
 const config = require('../common/config');
+const { createAPI } = require('./api');
+const { injectScriptsStart, injectScriptsEnd } = require('./util');
 
 class VM extends EventEmitter {
-  constructor(extension) {
+  constructor(extension, broadcaster) {
     super();
 
-    this.clean = true;
-
     this.extension = extension;
+    this.broadcaster = broadcaster;
+
+    this.clean = true;
     this.path = path.join(config.extensionsPath, this.extension._id);
   }
 
@@ -24,6 +27,22 @@ class VM extends EventEmitter {
 
     this.isolate = new ivm.Isolate({ memoryLimit: 128 });
     this.context = await this.isolate.createContext();
+
+    const jail = this.context.global;
+    await jail.set('global', jail.derefInto());
+    await jail.set('_ivm', ivm);
+    await jail.set('_api', createAPI({
+      id: this.extension._id,
+      broadcaster: this.broadcaster
+    }).copyInto());
+
+    const bootstrapFilename = './scripts/bootstrap-vm.js';
+    const bootstrapPath = path.join(__dirname, bootstrapFilename);
+    const bootstrapSource = await fs.readFile(bootstrapPath, { encoding: 'utf8' });
+    const bootstrap = await this.isolate.compileScript(bootstrapSource, {
+      filename: bootstrapFilename
+    });
+    await bootstrap.run(this.context);
 
     const mainModule = await this._loadModule(
       path.join(this.path, this.extension.backgroundScript)
@@ -50,6 +69,29 @@ class VM extends EventEmitter {
 
   get isDisposed() {
     return this.isolate.isDisposed;
+  }
+
+  async getPage(part) {
+    if (!['front', 'settings', 'stream'].includes(part)) { return null; }
+    if (!this.extension[part]) { return '<html></html>'; }
+
+    const browserAPIPath = path.join(__dirname, './scripts/browser-api.js');
+    const browserAPI = await fs.readFile(browserAPIPath, { encoding: 'utf8' });
+
+    const page = await fs.readFile(
+      path.join(this.path, this.extension[part].page),
+      { encoding: 'utf8' }
+    );
+    const scripts = [browserAPI, ...await Promise.all(
+      (this.extension[part].scripts || []).map(script =>
+        fs.readFile(path.join(this.path, script), { encoding: 'utf8' })
+      )
+    )];
+
+    return await injectScriptsStart(
+      await injectScriptsEnd(page, scripts),
+      [browserAPI]
+    );
   }
 
   async _loadModule(filepath) {

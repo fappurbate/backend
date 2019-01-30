@@ -1,4 +1,3 @@
-const fs = require('fs-extra');
 const path = require('path');
 
 const db = require('../common/db');
@@ -56,6 +55,8 @@ async function install(packageStream) {
   try {
     await fs.move(extensionPath, newExtensionPath);
   } catch (error) {
+    await db.extensions.delete({ _id: extension._id });
+    throw new CustomError(`Failed to install extension ${extension._id}.`, { error }, 'ERR_INSTALL_EXTENSION');
     console.error(`Couldn't not move extension from ${extensionPath} to ${newExtensionPath}.`);
     await db.extensions.delete({ _id: extension._id });
     throw new CustomError(`Failed to install extension ${extension._id}.`, { error }, 'ERR_INSTALL_EXTENSION');
@@ -105,7 +106,7 @@ async function start(arg, broadcaster) {
 
   const vms = getBroadcasterVMs(broadcaster);
 
-  const vm = new VM(extension);
+  const vm = new VM(extension, broadcaster);
   vm.on('error', async error => {
     console.debug(`VM encountered an error:`, error);
     await stop(extension, broadcaster);
@@ -142,6 +143,25 @@ async function stop(arg, broadcaster) {
   wssApp.onExtensionStop(extension, broadcaster);
 }
 
+async function getPage(arg, broadcaster, part) {
+  const extension = typeof arg === 'object' ? arg : await db.extensions.findOne({ _id: arg });
+  if (!extension) {
+    throw new CustomError(`Couldn't find extension ${arg}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
+  }
+
+  const vms = getBroadcasterVMs(broadcaster);
+  const vmInfo = vms[extension._id];
+
+  if (!vmInfo) {
+    throw new CustomError(
+      `Could't get ${part} page of ${extension.name} (${extension._id}): extension not running.`,
+      {}, 'ERR_EXTENSION_NOT_RUNNING'
+    )
+  }
+
+  return await vmInfo.vm.getPage(part);
+}
+
 async function queryForBroadcaster(broadcaster) {
   const vms = getBroadcasterVMs(broadcaster);
 
@@ -158,5 +178,11 @@ module.exports = {
   start,
   stop,
   remove,
+  getFrontPage: (extArg, broadcaster) => getPage(extArg, broadcaster, 'front'),
+  getSettingsPage: (extArg, broadcaster) => getPage(extArg, broadcaster, 'settings'),
+  getStreamPage: (extArg, broadcaster) => getPage(extArg, broadcaster, 'stream'),
+  getStreamPages: broadcaster => Promise.all(
+    Object.keys(getBroadcasterVMs(broadcaster)).map(id => getPage(id, broadcaster, 'stream'))
+  ),
   queryForBroadcaster
 };
