@@ -175,11 +175,11 @@ async function getLogs(arg, broadcaster, options) {
   const vms = getBroadcasterVMs(broadcaster);
   const vmInfo = vms[extension._id];
 
-  const logger = vmInfo ? vmInfo.logger : createVMLogger({
+  const logger = vmInfo ? vmInfo.vm.logger : createVMLogger({
     extensionId: extension._id,
     broadcaster
   });
-  const logs = await new Promise((resolve, reject) =>
+  const { nedb: logs } = await new Promise((resolve, reject) =>
     logger.query(rows ? { rows } : {}, (err, logs) => err ? reject(err) : resolve(logs))
   );
 

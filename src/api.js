@@ -102,10 +102,12 @@ module.exports = router => {
 
   router.get('/api/broadcaster/:broadcaster/extension/:extension/logs', async ctx => {
     const { extension: id, broadcaster } = ctx.params;
-    const { rows = 1000 } = ctx.query;
+    const { rows = null } = ctx.query;
 
     try {
-      const logs = await extensions.getLogs(id, broadcaster, { rows });
+      const logs = await extensions.getLogs(id, broadcaster, {
+        ...rows && { rows }
+      });
       ctx.body = logs;
     } catch (error) {
       console.error(`Failed to retrieve extension logs.`, error);
