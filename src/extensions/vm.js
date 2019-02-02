@@ -66,9 +66,22 @@ class VM extends EventEmitter {
       mainModule.evaluate()
         .catch(error => {
           this.emit('error', error);
-          // TODO: log the error
+          this.logger.log('error', this._getLocalStack(error.stack));
         });
     }
+  }
+
+  _getLocalStack(globalStack) {
+    const index = globalStack.indexOf('\n    at (<isolated-vm boundary>)');
+    globalStack = globalStack.substr(0, index);
+    globalStack = globalStack.replace(/\n    at/, '\nat');
+
+    const localStack = globalStack.replace(
+      new RegExp(`(\n.* )/.*?/extensions/9X65srYuR6mUERXV(/.*)(\n|$)`),
+      (match, p1, p2, p3) => p1 + p2 + p3
+    );
+
+    return localStack;
   }
 
   dispose() {
