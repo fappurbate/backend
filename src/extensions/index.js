@@ -153,10 +153,10 @@ async function getPage(arg, broadcaster, part) {
   const vmInfo = vms[extension._id];
 
   if (!vmInfo) {
-    throw new CustomError(
-      `Could't get ${part} page of ${extension.name} (${extension._id}): extension not running.`,
-      {}, 'ERR_EXTENSION_NOT_RUNNING'
-    )
+    const notRunningPage = await fs.readFile(
+      path.join(__dirname, 'pages', 'not-running.html')
+    );
+    return notRunningPage;
   }
 
   return await vmInfo.vm.getPage(part);
