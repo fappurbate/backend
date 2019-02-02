@@ -1,3 +1,4 @@
+const fs = require('fs-extra');
 const path = require('path');
 
 const db = require('../common/db');
@@ -94,7 +95,6 @@ async function remove(arg) {
 
   wssApp.onExtensionRemove(extension);
 }
-
 
 async function start(arg, broadcaster) {
   const extension = typeof arg === 'object' ? arg : await db.extensions.findOne({ _id: arg });

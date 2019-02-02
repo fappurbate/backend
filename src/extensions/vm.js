@@ -4,6 +4,7 @@ const path = require('path');
 const { EventEmitter } = require('events');
 
 const { CustomError } = require('../common/errors');
+const { createVMLogger } = require('../common/logger');
 const config = require('../common/config');
 const { createAPI } = require('./api');
 const { injectScriptsStart, injectScriptsEnd } = require('./util');
@@ -14,6 +15,8 @@ class VM extends EventEmitter {
 
     this.extension = extension;
     this.broadcaster = broadcaster;
+
+    this.logger = createVMLogger({ extensionId: extension._id, broadcaster });
 
     this.clean = true;
     this.path = path.join(config.extensionsPath, this.extension._id);
@@ -33,7 +36,8 @@ class VM extends EventEmitter {
     await jail.set('_ivm', ivm);
     await jail.set('_api', createAPI({
       id: this.extension._id,
-      broadcaster: this.broadcaster
+      broadcaster: this.broadcaster,
+      logger: this.logger
     }).copyInto());
 
     const bootstrapFilename = './scripts/bootstrap-vm.js';
@@ -82,11 +86,11 @@ class VM extends EventEmitter {
       path.join(this.path, this.extension[part].page),
       { encoding: 'utf8' }
     );
-    const scripts = [browserAPI, ...await Promise.all(
+    const scripts = await Promise.all(
       (this.extension[part].scripts || []).map(script =>
         fs.readFile(path.join(this.path, script), { encoding: 'utf8' })
       )
-    )];
+    );
 
     return await injectScriptsStart(
       await injectScriptsEnd(page, scripts),
