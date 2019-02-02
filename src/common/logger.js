@@ -24,13 +24,17 @@ module.exports.createLogger = function createLogger(data) {
 }
 
 module.exports.createVMLogger = function createVMLogger(options) {
-  const { extensionId, broadcaster } = options;
+  const { extensionId, broadcaster, onLogged = null } = options;
+
+  const transports = new WinstonNeDB({
+    filename: path.join(config.extensionsPath, extensionId, 'logs', `${broadcaster}.nedb`)
+  });
+
+  transports.on('logged', info => onLogged && setImmediate(() => onLogged(info)));
 
   return createWinston({
     format: getFormat({ timestamp: false }),
-    transports: [new WinstonNeDB({
-      filename: path.join(config.extensionsPath, extensionId, 'logs', `${broadcaster}.nedb`)
-    })],
+    transports,
     level: 'info'
   });
 }

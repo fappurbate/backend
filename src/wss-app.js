@@ -178,5 +178,14 @@ module.exports = {
     };
 
     wss.broadcast(JSON.stringify(msg));
+  },
+  onExtensionLog: (extension, broadcaster, info) => {
+    const msg = {
+      type: 'event',
+      subject: 'extension-log',
+      data: { extension, broadcaster, info }
+    };
+
+    wss.broadcast(JSON.stringify(msg));
   }
 };

@@ -100,6 +100,23 @@ module.exports = router => {
     }
   });
 
+  router.get('/api/broadcaster/:broadcaster/extension/:extension/logs', async ctx => {
+    const { extension: id, broadcaster } = ctx.params;
+    const { rows = 1000 } = ctx.query;
+
+    try {
+      const logs = await extensions.getLogs(id, broadcaster, { rows });
+      ctx.body = logs;
+    } catch (error) {
+      console.error(`Failed to retrieve extension logs.`, error);
+      if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
+        ctx.throw(404, 'Extension not found.');
+      } else {
+        ctx.throw(500, error.message);
+      }
+    }
+  });
+
   router.get('/api/broadcaster/:broadcaster/extension/:extension/front', async ctx => {
     const { broadcaster, extension: id } = ctx.params;
 

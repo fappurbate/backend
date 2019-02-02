@@ -3,6 +3,7 @@ const path = require('path');
 
 const db = require('../common/db');
 const { CustomError } = require('../common/errors');
+const { createVMLogger } = require('../common/logger');
 const config = require('../common/config');
 const wssApp = require('../wss-app');
 const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('./util');
@@ -154,12 +155,35 @@ async function getPage(arg, broadcaster, part) {
 
   if (!vmInfo) {
     const notRunningPage = await fs.readFile(
-      path.join(__dirname, 'pages', 'not-running.html')
+      path.join(__dirname, 'pages', 'not-running.html'),
+      { encoding: 'utf8' }
     );
     return notRunningPage;
   }
 
   return await vmInfo.vm.getPage(part);
+}
+
+async function getLogs(arg, broadcaster, options) {
+  const rows = options.rows || null;
+
+  const extension = typeof arg === 'object' ? arg : await db.extensions.findOne({ _id: arg });
+  if (!extension) {
+    throw new CustomError(`Couldn't find extension ${arg}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
+  }
+
+  const vms = getBroadcasterVMs(broadcaster);
+  const vmInfo = vms[extension._id];
+
+  const logger = vmInfo ? vmInfo.logger : createVMLogger({
+    extensionId: extension._id,
+    broadcaster
+  });
+  const logs = await new Promise((resolve, reject) =>
+    logger.query(rows ? { rows } : {}, (err, logs) => err ? reject(err) : resolve(logs))
+  );
+
+  return logs;
 }
 
 async function queryForBroadcaster(broadcaster) {
@@ -184,5 +208,6 @@ module.exports = {
   getStreamPages: broadcaster => Promise.all(
     Object.keys(getBroadcasterVMs(broadcaster)).map(id => getPage(id, broadcaster, 'stream'))
   ),
+  getLogs,
   queryForBroadcaster
 };

@@ -6,6 +6,7 @@ const { EventEmitter } = require('events');
 const { CustomError } = require('../common/errors');
 const { createVMLogger } = require('../common/logger');
 const config = require('../common/config');
+const wssApp = require('../wss-app');
 const { createAPI } = require('./api');
 const { injectScriptsStart, injectScriptsEnd } = require('./util');
 
@@ -16,7 +17,13 @@ class VM extends EventEmitter {
     this.extension = extension;
     this.broadcaster = broadcaster;
 
-    this.logger = createVMLogger({ extensionId: extension._id, broadcaster });
+    this.logger = createVMLogger({
+      extensionId: extension._id,
+      broadcaster,
+      onLogged(info) {
+        wssApp.onExtensionLog(extension, broadcaster, info);
+      }
+    });
 
     this.clean = true;
     this.path = path.join(config.extensionsPath, this.extension._id);
@@ -59,6 +66,7 @@ class VM extends EventEmitter {
       mainModule.evaluate()
         .catch(error => {
           this.emit('error', error);
+          // TODO: log the error
         });
     }
   }
