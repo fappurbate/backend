@@ -35,6 +35,21 @@ module.exports = router => {
     ctx.body = result;
   });
 
+  router.get('/api/broadcaster/:broadcaster/extension/:extension', async ctx => {
+    const { broadcaster, extension: id } = ctx.params;
+
+    try {
+      const result = await extensions.queryOneForBroadcaster(broadcaster, id);
+      ctx.body = result;
+    } catch (error) {
+      if (error.code === 'ERR_EXTENSION_NOT_FOUND') {
+        ctx.throw(404, 'Extension not found.');
+      } else {
+        throw error;
+      }
+    }
+  });
+
   router.post('/api/extensions', async ctx => {
     const { files } = await asyncBusboy(ctx.req);
 
@@ -119,24 +134,10 @@ module.exports = router => {
     }
   });
 
-  router.get('/api/broadcaster/:broadcaster/extension/:extension/front', async ctx => {
-    const { broadcaster, extension: id } = ctx.params;
+  router.get('/api/broadcaster/:broadcaster/extension/:extension/page/:page', async ctx => {
+    const { broadcaster, extension: id, page: pageName } = ctx.params;
 
-    const page = await extensions.getFrontPage(id, broadcaster);
-    ctx.body = page;
-  });
-
-  router.get('/api/broadcaster/:broadcaster/extension/:extension/settings', async ctx => {
-    const { broadcaster, extension: id } = ctx.params;
-
-    const page = await extensions.getSettingsPage(id, broadcaster);
-    ctx.body = page;
-  });
-
-  router.get('/api/broadcaster/:broadcaster/extension/:extension/stream', async ctx => {
-    const { broadcaster, extension: id } = ctx.params;
-
-    const page = await extensions.getStreamPage(id, broadcaster);
+    const page = await extensions.getPage(id, broadcaster, pageName);
     ctx.body = page;
   });
 

@@ -28,24 +28,22 @@ async function install(packageStream) {
     'ERR_LOAD_BACKGROUND_SCRIPT'
   );
 
-  for (const part of ['front', 'settings', 'stream']) {
-    if (!manifest[part]) { break; }
+  for (const name in manifest.pages || {}) {
+    const { template, scripts = [] } = manifest.pages[name];
 
     await tryLoadExtensionFile(
       extensionPath,
-      `${part} page`,
-      manifest[part].page,
-      `ERR_LOAD_${part.toUpperCase()}_PAGE`
+      `${name} page`,
+      template,
+      `ERR_LOAD_PAGE`
     );
 
-    manifest[part].scripts && await Promise.all(manifest[part].scripts.map(
-      (script, index) => tryLoadExtensionFile(
-        extensionPath,
-        `${part} script ${index}`,
-        script,
-        `ERR_LOAD_${part.toUpperCase()}_SCRIPT`
-      )
-    ));
+    await Promise.all(scripts.map((script, index) => tryLoadExtensionFile(
+      extensionPath,
+      `${name} script ${index}`,
+      script,
+      `ERR_LOAD_SCRIPT`
+    )));
   }
 
   const extension = await db.extensions.insert({
@@ -144,7 +142,7 @@ async function stop(arg, broadcaster) {
   wssApp.onExtensionStop(extension, broadcaster);
 }
 
-async function getPage(arg, broadcaster, part) {
+async function getPage(arg, broadcaster, name) {
   const extension = typeof arg === 'object' ? arg : await db.extensions.findOne({ _id: arg });
   if (!extension) {
     throw new CustomError(`Couldn't find extension ${arg}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
@@ -161,7 +159,7 @@ async function getPage(arg, broadcaster, part) {
     return notRunningPage;
   }
 
-  return await vmInfo.vm.getPage(part);
+  return await vmInfo.vm.getPage(name);
 }
 
 async function getLogs(arg, broadcaster, options) {
@@ -187,9 +185,9 @@ async function getLogs(arg, broadcaster, options) {
 }
 
 async function queryForBroadcaster(broadcaster) {
-  const vms = getBroadcasterVMs(broadcaster);
-
   const extensions = await db.extensions.find().sort({ createdAt: -1 });
+
+  const vms = getBroadcasterVMs(broadcaster);
   extensions.forEach(extension => {
     extension.running = extension._id in vms;
   });
@@ -197,14 +195,25 @@ async function queryForBroadcaster(broadcaster) {
   return extensions;
 }
 
+async function queryOneForBroadcaster(broadcaster, id) {
+
+  const extension = await db.extension.findOne({ _id: id });
+  if (!extension) {
+    throw new CustomError(`Couldn't find extension ${arg}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
+  }
+
+  const vms = getBroadcasterVMs(broadcaster);
+  extension.running = extension._id in vms;
+
+  return extension;
+}
+
 module.exports = {
   install,
   start,
   stop,
   remove,
-  getFrontPage: (extArg, broadcaster) => getPage(extArg, broadcaster, 'front'),
-  getSettingsPage: (extArg, broadcaster) => getPage(extArg, broadcaster, 'settings'),
-  getStreamPage: (extArg, broadcaster) => getPage(extArg, broadcaster, 'stream'),
+  getPage,
   getStreamPages: broadcaster => Promise.all(
     Object.keys(getBroadcasterVMs(broadcaster)).map(id => getPage(id, broadcaster, 'stream'))
   ),

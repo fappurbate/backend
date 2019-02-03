@@ -96,25 +96,25 @@ class VM extends EventEmitter {
     return this.isolate.isDisposed;
   }
 
-  async getPage(part) {
-    if (!['front', 'settings', 'stream'].includes(part)) { return null; }
-    if (!this.extension[part]) { return '<html></html>'; }
+  async getPage(name) {
+    const pageInfo = (this.extension.pages || {})[name];
+    if (!pageInfo) { return '<html></html>'; }
+
+    const { template: templatePath, scripts: scriptsPaths = [] } = pageInfo;
 
     const browserAPIPath = path.join(__dirname, './scripts/browser-api.js');
     const browserAPI = await fs.readFile(browserAPIPath, { encoding: 'utf8' });
 
-    const page = await fs.readFile(
-      path.join(this.path, this.extension[part].page),
+    const template = await fs.readFile(
+      path.join(this.path, templatePath),
       { encoding: 'utf8' }
     );
-    const scripts = await Promise.all(
-      (this.extension[part].scripts || []).map(script =>
-        fs.readFile(path.join(this.path, script), { encoding: 'utf8' })
-      )
-    );
+    const scripts = await Promise.all(scriptsPaths.map(scriptPath =>
+      fs.readFile(path.join(this.path, scriptPath), { encoding: 'utf8' })
+    ));
 
     return await injectScriptsStart(
-      await injectScriptsEnd(page, scripts),
+      await injectScriptsEnd(template, scripts),
       [browserAPI]
     );
   }

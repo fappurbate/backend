@@ -16,41 +16,20 @@ const validate = ajv.compile({
     name: { type: 'string' },
     description: { type: 'string' },
     backgroundScript: { type: 'string' },
-    front: {
+    pages: {
       type: 'object',
-      additionalProperties: false,
-      properties: {
-        page: { type: 'string' },
-        scripts: {
-          type: 'array',
-          items: { type: 'string' }
-        }
-      },
-      required: ['page']
-    },
-    settings: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        page: { type: 'string' },
-        scripts: {
-          type: 'array',
-          items: { type: 'string' }
-        }
-      },
-      required: ['page']
-    },
-    stream: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        page: { type: 'string' },
-        scripts: {
-          type: 'array',
-          items: { type: 'string' }
-        }
-      },
-      required: ['page']
+      additionalProperties: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          template: { type: 'string' },
+          scripts: {
+            type: 'array',
+            items: { type: 'string' }
+          }
+        },
+        required: ['template']
+      }
     }
   },
   required: ['name', 'description', 'backgroundScript']
@@ -77,7 +56,7 @@ async function readManifest(extensionPath) {
   const valid = validate(manifest);
   if (!valid) {
     console.error(`Invalid manifest.json:`, validate.errors);
-    throw new CustomError('Invalid manifest.json.', { errors }, 'ERR_INVALID_MANIFEST');
+    throw new CustomError('Invalid manifest.json.', { errors: validate.errors }, 'ERR_INVALID_MANIFEST');
   }
 
   return manifest;
