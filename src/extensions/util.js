@@ -3,6 +3,8 @@ const path = require('path');
 const tar = require('tar-fs');
 const tmp = require('tmp');
 
+const { CustomError } = require('../common/errors')
+
 module.exports.loadExtensionFile =
 function loadExtensionFile(extensionPath, name, filepath, errorcode) {
   if (!filepath) { return null; }

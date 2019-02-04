@@ -60,5 +60,10 @@ async function readManifest(extensionPath) {
     throw new CustomError('Invalid manifest.json.', { errors: validate.errors }, 'ERR_INVALID_MANIFEST');
   }
 
+  if (Object.keys(manifest.pages || {}).some(name => name.indexOf('@') !== -1)) {
+    console.error(`Invalid manifest.json: a page name cannot contain '@'.`);
+    throw new CustomError('Invalid manifest.json.', { error: 'A page name cannot contain \'@\'.' }, 'ERR_INVALID_MANIFEST');
+  }
+
   return manifest;
 }
