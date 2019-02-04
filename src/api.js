@@ -159,7 +159,7 @@ module.exports = router => {
     }
 
     // Send tip to the app
-    wssApp.onTip(broadcaster, tipper, amount);
+    wssApp.emit('tip', { broadcaster, tipper, amount });
 
     // Update the DB
     await db.tippers(broadcaster).then(store =>
@@ -173,7 +173,7 @@ module.exports = router => {
     console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
 
     // Send request to the app
-    wssApp.sendTranslationRequest(broadcaster, tabId, msgId, content);
+    wssApp.emit('request-translation', { broadcaster, tabId, msgId, content });
 
     // Update the DB
     await db.translationRequests.insert({
@@ -191,7 +191,7 @@ module.exports = router => {
     console.debug(`Cancel translation request (${tabId}, ${msgId}).`);
 
     // Send request to the app
-    wssApp.sendCancelTranslationRequest(tabId, msgId);
+    wssApp.emit('request-cancel-translation', { tabId, msgId });
 
     // Update the DB
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
@@ -214,7 +214,7 @@ module.exports = router => {
     console.debug(`Translation: ${content}`);
 
     // Send request to the extension
-    wssExt.sendTranslation(tabId, msgId, content);
+    wssExt.emit('translation', { tabId, msgId, content });
 
     // Update the DB
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });

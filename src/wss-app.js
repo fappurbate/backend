@@ -111,79 +111,11 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  onTip: (broadcaster, tipper, amount) => {
+  emit: (subject, data = null) => {
     const msg = {
       type: 'event',
-      subject: 'tip',
-      data: { broadcaster, tipper, amount }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  sendTranslationRequest: (broadcaster, tabId, msgId, content) => {
-    const msg = {
-      type: 'event',
-      subject: 'request-translation',
-      data: { broadcaster, tabId, msgId, content }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  sendCancelTranslationRequest: (tabId, msgId) => {
-    const msg = {
-      type: 'event',
-      subject: 'request-cancel-translation',
-      data: { tabId, msgId }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  onExtensionInstall: extension => {
-    const msg = {
-      type: 'event',
-      subject: 'extension-install',
-      data: {
-        extension: {
-          ...extension,
-          running: false
-        }
-      }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  onExtensionRemove: extension => {
-    const msg = {
-      type: 'event',
-      subject: 'extension-remove',
-      data: { extension }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  onExtensionStart: (extension, broadcaster) => {
-    const msg = {
-      type: 'event',
-      subject: 'extension-start',
-      data: { extension, broadcaster }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  onExtensionStop: (extension, broadcaster) => {
-    const msg = {
-      type: 'event',
-      subject: 'extension-stop',
-      data: { extension, broadcaster }
-    };
-
-    wss.broadcast(JSON.stringify(msg));
-  },
-  onExtensionLog: (extension, broadcaster, info) => {
-    const msg = {
-      type: 'event',
-      subject: 'extension-log',
-      data: { extension, broadcaster, info }
+      subject,
+      ...data && { data }
     };
 
     wss.broadcast(JSON.stringify(msg));

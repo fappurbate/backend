@@ -23,8 +23,8 @@ async function install(packageStream) {
 
   await tryLoadExtensionFile(
     extensionPath,
-    'background script',
-    manifest.backgroundScript,
+    'main script',
+    manifest.mainScript,
     'ERR_LOAD_BACKGROUND_SCRIPT'
   );
 
@@ -62,7 +62,7 @@ async function install(packageStream) {
     throw new CustomError(`Failed to install extension ${extension._id}.`, { error }, 'ERR_INSTALL_EXTENSION');
   }
 
-  wssApp.onExtensionInstall(extension);
+  wssApp.emit('extension-install', { extension: { ...extension, running: false } });
 
   return extension._id;
 }
@@ -92,7 +92,7 @@ async function remove(arg) {
 
   await fs.remove(path.join(config.extensionsPath, extension._id));
 
-  wssApp.onExtensionRemove(extension);
+  wssApp.emit('extension-remove', { extension });
 }
 
 async function start(arg, broadcaster) {
@@ -119,7 +119,7 @@ async function start(arg, broadcaster) {
     vm
   };
 
-  wssApp.onExtensionStart(extension, broadcaster);
+  wssApp.emit('extension-start', { extension, broadcaster });
 }
 
 async function stop(arg, broadcaster) {
@@ -139,7 +139,7 @@ async function stop(arg, broadcaster) {
   console.log(`Shutting down extension ${extension.name} (${extension._id})...`);
   vmInfo.vm.dispose();
 
-  wssApp.onExtensionStop(extension, broadcaster);
+  wssApp.emit('extension-stop', { extension, broadcaster });
 }
 
 async function getPage(arg, broadcaster, name) {
@@ -197,7 +197,7 @@ async function queryForBroadcaster(broadcaster) {
 
 async function queryOneForBroadcaster(broadcaster, id) {
 
-  const extension = await db.extension.findOne({ _id: id });
+  const extension = await db.extensions.findOne({ _id: id });
   if (!extension) {
     throw new CustomError(`Couldn't find extension ${arg}.`, {}, 'ERR_EXTENSION_NOT_FOUND');
   }
@@ -218,5 +218,6 @@ module.exports = {
     Object.keys(getBroadcasterVMs(broadcaster)).map(id => getPage(id, broadcaster, 'stream'))
   ),
   getLogs,
-  queryForBroadcaster
+  queryForBroadcaster,
+  queryOneForBroadcaster
 };

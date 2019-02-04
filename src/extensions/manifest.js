@@ -15,7 +15,8 @@ const validate = ajv.compile({
   properties: {
     name: { type: 'string' },
     description: { type: 'string' },
-    backgroundScript: { type: 'string' },
+    version: { type: 'string' },
+    mainScript: { type: 'string' },
     pages: {
       type: 'object',
       additionalProperties: {
@@ -32,7 +33,7 @@ const validate = ajv.compile({
       }
     }
   },
-  required: ['name', 'description', 'backgroundScript']
+  required: ['name', 'description', 'mainScript']
 });
 
 module.exports.readManifest =

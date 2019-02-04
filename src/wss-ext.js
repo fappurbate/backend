@@ -105,11 +105,11 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  sendTranslation(tabId, msgId, content) {
+  emit(subject, data = null) {
     const msg = {
       type: 'event',
-      subject: 'translation',
-      data: { tabId, msgId, content }
+      subject,
+      ...data && { data }
     };
 
     wss.broadcast(JSON.stringify(msg));

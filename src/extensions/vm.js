@@ -21,7 +21,7 @@ class VM extends EventEmitter {
       extensionId: extension._id,
       broadcaster,
       onLogged(info) {
-        wssApp.onExtensionLog(extension, broadcaster, info);
+        wssApp.emit('extension-log', { extension, broadcaster, info });
       }
     });
 
@@ -56,7 +56,7 @@ class VM extends EventEmitter {
     await bootstrap.run(this.context);
 
     const mainModule = await this._loadModule(
-      path.join(this.path, this.extension.backgroundScript)
+      path.join(this.path, this.extension.mainScript)
     ).catch(error => {
       this.emit('error', error);
       return null;
