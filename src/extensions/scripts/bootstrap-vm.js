@@ -7,6 +7,8 @@ delete _api;
 global.kck = {
   runtime: {
     id: api.runtime.id,
+    name: api.runtime.name,
+    version: api.runtime.version,
     broadcaster: api.runtime.broadcaster
   },
   logger: {

@@ -3,10 +3,10 @@ const ivm = require('isolated-vm');
 const createLoggerAPI = require('./logger');
 
 module.exports.createAPI = function createAPI(data) {
-  const { id, broadcaster } = data;
+  const { id, name, version broadcaster } = data;
 
   const api = {
-    runtime: { id, broadcaster },
+    runtime: { id, name, version, broadcaster },
     logger: createLoggerAPI(data)
   };
 

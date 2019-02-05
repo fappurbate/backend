@@ -43,6 +43,8 @@ class VM extends EventEmitter {
     await jail.set('_ivm', ivm);
     await jail.set('_api', createAPI({
       id: this.extension._id,
+      name: this.extension.name,
+      version: this.extension.version || null,
       broadcaster: this.broadcaster,
       logger: this.logger
     }).copyInto());
