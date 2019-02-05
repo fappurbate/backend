@@ -2,3 +2,4 @@
 /db
 /extensions
 /config.json
+/src/extensions/scripts/browser-api/dist

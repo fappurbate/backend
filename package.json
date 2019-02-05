@@ -5,6 +5,8 @@
   "main": "src/main.js",
   "scripts": {
     "start": "node src/main.js",
+    "build": "npx webpack",
+    "build:watch": "npx webpack --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -22,7 +24,7 @@
   "homepage": "https://github.com/kothique/chaturbate-backend#readme",
   "dependencies": {
     "@koa/cors": "^2.2.3",
-    "@kothique/request-target": "^2.1.0",
+    "@kothique/request-target": "^2.1.1",
     "@kothique/winston-nedb": "^1.0.1",
     "ajv": "^6.7.0",
     "async-busboy": "^0.7.0",
@@ -44,6 +46,9 @@
     "ws": "^6.1.2"
   },
   "devDependencies": {
+    "@babel/core": "^7.2.2",
+    "@babel/preset-env": "^7.3.1",
+    "babel-loader": "^8.0.5",
     "webpack": "^4.28.4",
     "webpack-cli": "^3.2.1"
   }

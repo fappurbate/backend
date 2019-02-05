@@ -13,7 +13,17 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
   const meta = {};
 
   wssApp.events.on('extension-event', data => {
-    if (data.id !== id || data.broadcaster !== broadcaster || !data.receivers.includes('@main')) {
+    const index = data.receivers.indexOf('@main');
+    if (index) {
+      data.receivers.splice(index, 1);
+    }
+
+    if (data.receivers.length > 0) {
+      wssApp.emit('extension-event', data);
+    }
+
+    const forMe = index !== -1;
+    if (data.id !== id || data.broadcaster !== broadcaster || !forMe) {
       return;
     }
 
@@ -21,26 +31,27 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
   });
 
   wssApp.requests.on('extension-request', meta.requestListener = data => {
-    if (data.id !== id || data.broadcaster !== broadcaster ||
-        !data.receivers.includes('@main')) {
+    if (data.id !== id || data.broadcaster !== broadcaster) {
       return;
     }
 
-    return requestHandlers.request(data.subject, data.sender, data.data);
+    const { subject, sender } = data;
+
+    return requestHandlers.request(subject, sender, data.data);
   });
 
   const api = {
     id, name, version, broadcaster,
     onEvent: {
-      addListener: new ivm.Reference((subject, cbRef) =>
-        eventHandlers.on(subject, (sender, data) => cbRef.applyIgnored(
+      addListener: new ivm.Reference((subject, cbRef) => {
+        eventHandlers.on(subject, (sender, data) => cbRef.applySync(
           undefined,
           [
             sender,
             new ivm.ExternalCopy(data).copyInto()
           ]
-        ))
-      )
+        ));
+      })
     },
     emitEvent: new ivm.Reference((receivers, subject, data = null) => {
       const mainScriptIndex = receivers.indexOf('@main');
@@ -62,7 +73,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
       });
     }),
     onRequest: {
-      addListener: new ivm.Reference((subject, cbRef) =>
+      addHandler: new ivm.Reference((subject, cbRef) => {
         requestHandlers.on(subject, (sender, data) => cbRef.apply(
           undefined,
           [
@@ -70,7 +81,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
             new ivm.ExternalCopy(data).copyInto()
           ]
         ))
-      )
+      })
     }
   };
 

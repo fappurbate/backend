@@ -27,8 +27,8 @@ global.kck = {
       );
     },
     onRequest: {
-      addListener: (subject, callback) => {
-        api.runtime.onRequest.addListener.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
+      addHandler: (subject, callback) => {
+        api.runtime.onRequest.addHandler.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
         return global.kck.runtime.onRequest;
       }
     }

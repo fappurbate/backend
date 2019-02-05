@@ -110,8 +110,12 @@ class VM extends EventEmitter {
 
     const { template: templatePath, scripts: scriptsPaths = [] } = pageInfo;
 
-    const browserAPIPath = path.join(__dirname, './scripts/browser-api.js');
-    const browserAPI = await fs.readFile(browserAPIPath, { encoding: 'utf8' });
+    const browserAPIPath = path.join(__dirname, './scripts/browser-api/dist/browser-api.js');
+    const browserAPI = await fs.readFile(browserAPIPath, { encoding: 'utf8' })
+      .catch(error => {
+        console.error(`Browser API must be transpiled before running a VM. Run \`npm run build\`.`);
+        throw error;
+      });
 
     const template = await fs.readFile(
       path.join(this.path, templatePath),
