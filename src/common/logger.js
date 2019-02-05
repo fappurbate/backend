@@ -35,6 +35,6 @@ module.exports.createVMLogger = function createVMLogger(options) {
   return createWinston({
     format: getFormat({ timestamp: false }),
     transports,
-    level: 'info'
+    level: 'silly'
   });
 }

@@ -7,7 +7,7 @@ const { CustomError } = require('../common/errors');
 const { createVMLogger } = require('../common/logger');
 const config = require('../common/config');
 const wssApp = require('../wss-app');
-const { createAPI } = require('./api');
+const { createAPI, disposeAPI } = require('./api');
 const { injectScriptsStart, injectScriptsEnd } = require('./util');
 
 class VM extends EventEmitter {
@@ -38,16 +38,19 @@ class VM extends EventEmitter {
     this.isolate = new ivm.Isolate({ memoryLimit: 128 });
     this.context = await this.isolate.createContext();
 
-    const jail = this.context.global;
-    await jail.set('global', jail.derefInto());
-    await jail.set('_ivm', ivm);
-    await jail.set('_api', createAPI({
+    const { api, meta: apiMeta } = createAPI({
       id: this.extension._id,
       name: this.extension.name,
       version: this.extension.version || null,
       broadcaster: this.broadcaster,
       logger: this.logger
-    }).copyInto());
+    });
+    this.apiMeta = apiMeta;
+
+    const jail = this.context.global;
+    await jail.set('global', jail.derefInto());
+    await jail.set('_ivm', ivm);
+    await jail.set('_api', api);
 
     const bootstrapFilename = './scripts/bootstrap-vm.js';
     const bootstrapPath = path.join(__dirname, bootstrapFilename);
@@ -91,6 +94,9 @@ class VM extends EventEmitter {
 
     this.context.release();
     this.isolate.dispose();
+
+    disposeAPI(this.apiMeta);
+
     this.clean = true;
   }
 

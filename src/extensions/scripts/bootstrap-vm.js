@@ -9,7 +9,23 @@ global.kck = {
     id: api.runtime.id,
     name: api.runtime.name,
     version: api.runtime.version,
-    broadcaster: api.runtime.broadcaster
+    broadcaster: api.runtime.broadcaster,
+    events: {
+      on: (subject, callback) => {
+        api.runtime.events.on.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
+        return kck.runtime.events;
+      },
+      emit: (receivers, subject, data = null) => {
+        return api.runtime.events.emit.applySync(
+          undefined,
+          [
+            new ivm.ExternalCopy(receivers).copyInto(),
+            subject,
+            new ivm.ExternalCopy(data).copyInto()
+          ]
+        );
+      }
+    }
   },
   logger: {
     error: (...args) => api.logger.error.applyIgnored(undefined, args.map(arg => new ivm.ExternalCopy(arg).copyInto())),
