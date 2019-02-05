@@ -2,9 +2,9 @@ const WebSocket = require('ws');
 const EventEmitter = require('events');
 const https = require('https');
 const fs = require('fs-extra');
+const RequestTarget = require('@kothique/request-target');
 
 const { CustomError } = require('./common/errors');
-const RequestTarget = require('./common/request-target');
 const config = require('./common/config');
 
 const server = https.createServer({

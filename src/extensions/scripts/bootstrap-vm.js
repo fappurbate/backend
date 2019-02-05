@@ -10,20 +10,26 @@ global.kck = {
     name: api.runtime.name,
     version: api.runtime.version,
     broadcaster: api.runtime.broadcaster,
-    events: {
-      on: (subject, callback) => {
-        api.runtime.events.on.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
-        return kck.runtime.events;
-      },
-      emit: (receivers, subject, data = null) => {
-        return api.runtime.events.emit.applySync(
-          undefined,
-          [
-            new ivm.ExternalCopy(receivers).copyInto(),
-            subject,
-            new ivm.ExternalCopy(data).copyInto()
-          ]
-        );
+    onEvent: {
+      addListener: (subject, callback) => {
+        api.runtime.onEvent.addListener.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
+        return global.kck.runtime.onEvent;
+      }
+    },
+    emitEvent: (receivers, subject, data = null) => {
+      return api.runtime.emitEvent.applySync(
+        undefined,
+        [
+          new ivm.ExternalCopy(receivers).copyInto(),
+          subject,
+          new ivm.ExternalCopy(data).copyInto()
+        ]
+      );
+    },
+    onRequest: {
+      addListener: (subject, callback) => {
+        api.runtime.onRequest.addListener.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
+        return global.kck.runtime.onRequest;
       }
     }
   },

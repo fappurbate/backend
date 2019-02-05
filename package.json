@@ -22,6 +22,7 @@
   "homepage": "https://github.com/kothique/chaturbate-backend#readme",
   "dependencies": {
     "@koa/cors": "^2.2.3",
+    "@kothique/request-target": "^2.1.0",
     "@kothique/winston-nedb": "^1.0.1",
     "ajv": "^6.7.0",
     "async-busboy": "^0.7.0",

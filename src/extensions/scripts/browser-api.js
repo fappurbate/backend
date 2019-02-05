@@ -9,10 +9,5 @@ window.kck = {
     name: nameNode.getAttribute('data-content'),
     version: versionNode ? versionNode.getAttribute('data-content') : null,
     broadcaster: broadcasterNode.getAttribute('data-content')
-  },
-  test: {
-    say: (...args) => {
-      document.write(args.join(' '));
-    }
   }
 };

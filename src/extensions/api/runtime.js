@@ -1,7 +1,7 @@
 const { EventEmitter } = require('events');
 const ivm = require('isolated-vm');
+const RequestTarget = require('@kothique/request-target');
 
-const RequestTarget = require('../../common/request-target');
 const wssApp = require('../../wss-app');
 
 module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
@@ -12,46 +12,65 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 
   const meta = {};
 
-  wssApp.events.on('extension-event', meta.listener = event => {
-    if (event.detail.id !== id || event.detail.broadcaster !== broadcaster ||
-        !event.detail.receivers.includes('@main')) {
+  wssApp.events.on('extension-event', data => {
+    if (data.id !== id || data.broadcaster !== broadcaster || !data.receivers.includes('@main')) {
       return;
     }
 
-    const { sender, subject, data } = event.detail;
+    eventHandlers.emit(data.subject, data.sender, data.data);
+  });
 
-    eventHandlers.emit(subject, { sender, data });
+  wssApp.requests.on('extension-request', meta.requestListener = data => {
+    if (data.id !== id || data.broadcaster !== broadcaster ||
+        !data.receivers.includes('@main')) {
+      return;
+    }
+
+    return requestHandlers.request(data.subject, data.sender, data.data);
   });
 
   const api = {
     id, name, version, broadcaster,
-    events: {
-      on: new ivm.Reference((subject, cbRef) => {
-        eventHandlers.on(subject, data => cbRef.applyIgnored(
+    onEvent: {
+      addListener: new ivm.Reference((subject, cbRef) =>
+        eventHandlers.on(subject, (sender, data) => cbRef.applyIgnored(
           undefined,
-          [new ivm.ExternalCopy(data).copyInto()]
-        ));
+          [
+            sender,
+            new ivm.ExternalCopy(data).copyInto()
+          ]
+        ))
+      )
+    },
+    emitEvent: new ivm.Reference((receivers, subject, data = null) => {
+      const mainScriptIndex = receivers.indexOf('@main');
 
-      }),
-      emit: new ivm.Reference((receivers, subject, data = null) => {
-        const mainScriptIndex = receivers.indexOf('@main');
+      if (mainScriptIndex !== -1) {
+        eventHandlers.emit(subject, '@main', data);
+        receivers.splice(mainScriptIndex, 1);
+      }
 
-        if (mainScriptIndex !== -1) {
-          eventHandlers.emit(subject, { sender: '@main', data });
-          receivers.splice(mainScriptIndex, 1);
-        }
+      if (receivers.length === 0) { return; }
 
-        if (receivers.length === 0) { return; }
-
-        wssApp.emit('extension-event', {
-          id,
-          broadcaster,
-          receivers,
-          sender: '@main',
-          subject,
-          ...data && { data }
-        });
-      })
+      wssApp.emit('extension-event', {
+        id,
+        broadcaster,
+        receivers,
+        sender: '@main',
+        subject,
+        ...data && { data }
+      });
+    }),
+    onRequest: {
+      addListener: new ivm.Reference((subject, cbRef) =>
+        requestHandlers.on(subject, (sender, data) => cbRef.apply(
+          undefined,
+          [
+            sender,
+            new ivm.ExternalCopy(data).copyInto()
+          ]
+        ))
+      )
     }
   };
 
@@ -59,5 +78,6 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 };
 
 module.exports.disposeRuntimeAPI = function disposeRuntimeAPI(meta) {
-  wssApp.events.off('extension-event', meta.listener);
+  // wssApp.events.off('extension-event', meta.eventListener);
+  // wssApp.requests.off('extension-request', meta.requestListener);
 };

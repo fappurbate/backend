@@ -1,8 +1,8 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+const RequestTarget = require('@kothique/request-target');
 
 const { CustomError } = require('./common/errors');
-const RequestTarget = require('./common/request-target');
 const config = require('./common/config');
 
 const wss = new WebSocket.Server({
