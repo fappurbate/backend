@@ -12,7 +12,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 
   const meta = {};
 
-  wssApp.events.on('extension-event', data => {
+  wssApp.events.on('extension-event', meta.eventListener = data => {
     const index = data.receivers.indexOf('@main');
     if (index) {
       data.receivers.splice(index, 1);
@@ -44,7 +44,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
     id, name, version, broadcaster,
     onEvent: {
       addListener: new ivm.Reference((subject, cbRef) => {
-        eventHandlers.on(subject, (sender, data) => cbRef.applySync(
+        eventHandlers.on(subject, (sender, data) => cbRef.applyIgnored(
           undefined,
           [
             sender,
@@ -89,6 +89,6 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 };
 
 module.exports.disposeRuntimeAPI = function disposeRuntimeAPI(meta) {
-  // wssApp.events.off('extension-event', meta.eventListener);
-  // wssApp.requests.off('extension-request', meta.requestListener);
+  wssApp.events.off('extension-event', meta.eventListener);
+  wssApp.requests.off('extension-request', meta.requestListener);
 };

@@ -41,5 +41,13 @@ global.kck = {
     debug: (...args) => api.logger.debug.applyIgnored(undefined, args.map(arg => new ivm.ExternalCopy(arg).copyInto())),
     silly: (...args) => api.logger.silly.applyIgnored(undefined, args.map(arg => new ivm.ExternalCopy(arg).copyInto())),
     setLevel: level => api.logger.setLevel.applyIgnored(undefined, [level])
+  },
+  cb: {
+    onMessage: {
+      addListener: callback => {
+        api.cb.onMessage.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
+        return global.kck.cb.onMessage;
+      }
+    }
   }
 };
