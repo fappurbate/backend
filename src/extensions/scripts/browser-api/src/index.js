@@ -23,3 +23,24 @@ window.kck = {
   runtime: runtime(data),
   cb: cb(data)
 };
+
+const oldAddEventListener = window.addEventListener;
+window.addEventListener = function addEventListener(type, ...rest) {
+  if (type === 'message') {
+    console.error(`Don't listen to 'message', better use KCK API ^_^ This is for security reasons.`);
+    return;
+  }
+
+  return oldAddEventListener.apply(window, rest);
+};
+
+const oldOnMessage = window.onmessage;
+Object.defineProperty(window, 'onmessage', {
+  set: () => console.error(`Please don't set 'onmessage', KCK API is better (I hope)! If it's not, create an issue on GitHub ^-^`),
+  get: () => oldOnMessage
+});
+
+const oldParent = window.parent;
+Object.defineProperty(window, 'parent', {
+  get: () => console.error(`There's no parent anymore.`)
+});

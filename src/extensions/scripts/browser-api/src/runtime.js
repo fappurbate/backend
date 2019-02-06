@@ -1,6 +1,9 @@
 import RequestTarget from '@kothique/request-target';
 import { CustomError } from '../../../../common/errors';
 
+// there will not be window.parent later
+const parent = window.parent;
+
 const eventHandlers = new EventTarget;
 const requestHandlers = new RequestTarget;
 
@@ -45,7 +48,7 @@ export default ({ id, name, version, broadcaster }) => ({
     }
   },
   emitEvent: (receivers, subject, data) => {
-    window.parent.postMessage({
+    parent.postMessage({
       subject: 'event',
       data: { receivers, subject, data }
     }, '*');
@@ -66,7 +69,7 @@ export default ({ id, name, version, broadcaster }) => ({
       }
     });
 
-    window.parent.postMessage({
+    parent.postMessage({
       subject: 'request',
       data: { requestId, subject, data }
     }, '*');
