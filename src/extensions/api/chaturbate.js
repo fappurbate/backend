@@ -10,11 +10,19 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 
   const meta = {};
 
-  wssExt.events.on('message', meta.listener = data => {
+  wssExt.events.on('message', meta.messageListener = data => {
     const { info, type, data: msgData } = data;
 
     if (info.broadcast.active && info.chat.active && info.chat.ready && info.chat.owner === broadcaster) {
       eventHandlers.emit('message', type, msgData);
+    }
+  });
+
+  wssExt.events.on('account-activity', meta.accountActivityListener = data => {
+    const { username, type, data: aaData } = data;
+
+    if (username === broadcaster) {
+      eventHandlers.emit('account-activity', type, aaData);
     }
   });
 
@@ -29,6 +37,17 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
           ]
         ));
       })
+    },
+    onAccountActivity: {
+      addListener: new ivm.Reference(cbRef => {
+        eventHandlers.on('account-activity', (type, data) => cbRef.applyIgnored(
+          undefined,
+          [
+            type,
+            new ivm.ExternalCopy(data).copyInto()
+          ]
+        ));
+      })
     }
   };
 
@@ -36,5 +55,6 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 };
 
 module.exports.disposeChaturbateAPI = function disposeChaturbateAPI(meta) {
-  wssExt.events.off('message', meta.listener);
+  wssExt.events.off('message', meta.accountActivityListener);
+  wssExt.events.off('message', meta.messageListener);
 };

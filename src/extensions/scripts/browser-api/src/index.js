@@ -40,7 +40,7 @@ Object.defineProperty(window, 'onmessage', {
   get: () => oldOnMessage
 });
 
-const oldParent = window.parent;
-Object.defineProperty(window, 'parent', {
-  get: () => console.error(`There's no parent anymore.`)
-});
+// const oldParent = window.parent;
+// Object.defineProperty(window, 'parent', {
+//   get: () => console.error(`There's no parent anymore.`)
+// });

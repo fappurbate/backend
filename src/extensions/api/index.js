@@ -2,7 +2,7 @@ const ivm = require('isolated-vm');
 
 const { createRuntimeAPI, disposeRuntimeAPI } = require('./runtime');
 const { createLoggerAPI, disposeLoggerAPI } = require('./logger');
-const { createChaturbateAPI, disposeChaturbateAPI } = require('./cb');
+const { createChaturbateAPI, disposeChaturbateAPI } = require('./chaturbate');
 
 module.exports.createAPI = function createAPI(data) {
   const { id, name, version, broadcaster } = data;

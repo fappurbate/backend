@@ -223,4 +223,8 @@ module.exports = router => {
   wssExt.events.on('message', async data => {
     wssApp.emit('message', data);
   });
+
+  wssExt.events.on('account-activity', async data => {
+    wssApp.emit('account-activity', data);
+  });
 };

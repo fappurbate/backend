@@ -48,6 +48,12 @@ global.kck = {
         api.cb.onMessage.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
         return global.kck.cb.onMessage;
       }
+    },
+    onAccountActivity: {
+      addListener: callback => {
+        api.cb.onAccountActivity.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
+        return global.kck.cb.onAccountActivity;
+      }
     }
   }
 };
