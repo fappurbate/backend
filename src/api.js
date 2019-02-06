@@ -219,4 +219,8 @@ module.exports = router => {
     // Update the DB
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
+
+  wssExt.events.on('message', async data => {
+    wssApp.emit('message', data);
+  });
 };

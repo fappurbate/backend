@@ -14,19 +14,19 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     const { info, type, data: msgData } = data;
 
     if (info.broadcast.active && info.chat.active && info.chat.ready && info.chat.owner === broadcaster) {
-      eventHandlers.emit('message', {
-        type,
-        data: msgData
-      });
+      eventHandlers.emit('message', type, msgData);
     }
   });
 
   const api = {
     onMessage: {
       addListener: new ivm.Reference(cbRef => {
-        eventHandlers.on('message', data => cbRef.applyIgnored(
+        eventHandlers.on('message', (type, data) => cbRef.applyIgnored(
           undefined,
-          [new ivm.ExternalCopy(data).copyInto()]
+          [
+            type,
+            new ivm.ExternalCopy(data).copyInto()
+          ]
         ));
       })
     }

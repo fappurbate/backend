@@ -1,20 +1,5 @@
 import RequestTarget from '@kothique/request-target';
-import { CustomError } from './errors';
-
-const idNode = document.querySelector('meta[data-name="id"]');
-const nameNode = document.querySelector('meta[data-name="name"]');
-const versionNode = document.querySelector('meta[data-name="version"]');
-const broadcasterNode = document.querySelector('meta[data-name="broadcaster"]');
-
-const id = idNode.getAttribute('data-content');
-const name = nameNode.getAttribute('data-content');
-const version = versionNode ? versionNode.getAttribute('data-content') : null;
-const broadcaster = broadcasterNode.getAttribute('data-content');
-
-idNode.remove();
-nameNode.remove();
-versionNode &&  versionNode.remove();
-broadcasterNode.remove();
+import { CustomError } from '../../../../common/errors';
 
 const eventHandlers = new EventTarget;
 const requestHandlers = new RequestTarget;
@@ -26,10 +11,12 @@ window.addEventListener('message', event => {
   const { subject, data } = event.data;
 
   if (subject === 'event') {
-    eventHandlers.dispatchEvent(new CustomEvent(data.subject, {
+    const { subject, sender, data: eventData } = data;
+
+    eventHandlers.dispatchEvent(new CustomEvent(subject, {
       detail: {
-        sender: data.sender,
-        data: data.data
+        sender,
+        data: eventData
       }
     }));
   } else if (subject === 'response') {
@@ -44,7 +31,7 @@ window.addEventListener('message', event => {
   }
 });
 
-export default {
+export default ({ id, name, version, broadcaster }) => ({
   id,
   name,
   version,
@@ -86,4 +73,4 @@ export default {
 
     return promise;
   }
-};
+});
