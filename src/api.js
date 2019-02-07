@@ -148,25 +148,6 @@ module.exports = router => {
     ctx.body = pages;
   });
 
-  wssExt.events.on('tip', async (extId, data) => {
-    const { broadcaster, tipper, amount } = data;
-
-    console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
-
-    if (!broadcaster) {
-      console.error(`Tip: no broadcaster specified! (tipper: ${tipper}, amount: ${amount})`);
-      return;
-    }
-
-    // Send tip to the app
-    wssApp.emit('tip', { broadcaster, tipper, amount });
-
-    // Update the DB
-    await db.tippers(broadcaster).then(store =>
-      store.update({ username: tipper }, { $inc: { amount } }, { upsert: true })
-    );
-  });
-
   wssExt.events.on('request-translation', async (extId, data) => {
     const { broadcaster, tabId, msgId, content } = data;
 
@@ -222,9 +203,21 @@ module.exports = router => {
 
   wssExt.events.on('message', async (extId, data) => {
     wssApp.emit('message', data);
+
+    const { info, type, data: msgData } = data;
+    if (type === 'tip') {
+      const { username, amount } = msgData;
+
+      console.debug(`Tip: ${amount}tkn from ${username} to ${info.chat.owner}`);
+
+      // Update the DB
+      await db.tippers(info.chat.owner).then(store =>
+        store.update({ username }, { $inc: { amount } }, { upsert: true })
+      );
+    }
   });
 
-  wssExt.events.on('account-activity', async (extId, data) => {
+  wssExt.events.on('account-activity', (extId, data) => {
     wssApp.emit('account-activity', data);
   });
 
@@ -248,20 +241,20 @@ module.exports = router => {
     delete extractAccountActivityByExtId[extId];
   });
 
-  wssExt.events.on('broadcast-start', async (extId, data) => {
+  wssExt.events.on('broadcast-start', (extId, data) => {
     wssApp.emit('broadcast-start', data);
   });
 
-  wssExt.events.on('broadcast-stop', async (extId, data) => {
+  wssExt.events.on('broadcast-stop', (extId, data) => {
     wssApp.emit('broadcast-stop', data);
     broadcastsByExtId[extId].delete(data);
   });
 
-  wssExt.events.on('extract-account-activity-start', async (extId, data) => {
+  wssExt.events.on('extract-account-activity-start', (extId, data) => {
     wssApp.emit('extract-account-activity-start', data);
   });
 
-  wssExt.events.on('extract-account-activity-stop', async (extId, data) => {
+  wssExt.events.on('extract-account-activity-stop', (extId, data) => {
     wssApp.emit('extract-account-activity-stop', data);
     extractAccountActivityByExtId[extId].delete(data);
   });
