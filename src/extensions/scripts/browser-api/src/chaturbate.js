@@ -4,11 +4,12 @@ window.addEventListener('message', event => {
   const { subject, data } = event.data;
 
   if (subject === 'message') {
-    const { type, data: msgData } = data;
+    const { type, timestamp, data: msgData } = data;
 
     eventHandlers.dispatchEvent(new CustomEvent('message', {
       detail: {
         type,
+        timestamp,
         data: msgData
       }
     }));
@@ -37,8 +38,8 @@ export default ({ id, name, version, broadcaster }) => ({
   onMessage: {
     addListener: callback => {
       eventHandlers.addEventListener('message', event => {
-        const { type, data } = event.detail;
-        callback(type, data);
+        const { type, timestamp, data } = event.detail;
+        callback(type, timestamp, data);
       })
     }
   },

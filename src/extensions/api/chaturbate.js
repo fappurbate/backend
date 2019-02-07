@@ -10,10 +10,10 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   const meta = {};
 
   wssExt.events.on('message', meta.messageListener = (extId, data) => {
-    const { info, type, data: msgData } = data;
+    const { info, type, timestamp, data: msgData } = data;
 
     if (info.broadcast.active && info.chat.active && info.chat.ready && info.chat.owner === broadcaster) {
-      eventHandlers.emit('message', type, msgData);
+      eventHandlers.emit('message', type, new Date(timestamp), msgData);
     }
   });
 
@@ -72,10 +72,11 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   const api = {
     onMessage: {
       addListener: new ivm.Reference(cbRef => {
-        eventHandlers.on('message', (type, data) => cbRef.apply(
+        eventHandlers.on('message', (type, timestamp, data) => cbRef.apply(
           undefined,
           [
             type,
+            new ivm.ExternalCopy(timestamp).copyInto(),
             new ivm.ExternalCopy(data).copyInto()
           ]
         ).catch(logError));

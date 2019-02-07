@@ -204,7 +204,8 @@ module.exports = router => {
   wssExt.events.on('message', async (extId, data) => {
     wssApp.emit('message', data);
 
-    const { info, type, data: msgData } = data;
+    const { info, type, timestamp, data: msgData } = data;
+
     if (type === 'tip') {
       const { username, amount } = msgData;
 
