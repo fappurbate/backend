@@ -26,8 +26,14 @@ wss.on('listening', () => {
 const eventHandlers = new EventEmitter;
 const requestHandlers = new RequestTarget;
 
+let nextAppId = 0;
+const appIds = {};
+
 wss.on('connection', ws => {
   console.log('WSS App Server: client connected.');
+
+  const appId = appIds[ws] = nextAppId++;
+  eventHandlers.emit('$open', appId);
 
   let nextRequestId = 0;
   const requests = {};
@@ -55,6 +61,10 @@ wss.on('connection', ws => {
     console.log(
       `WSS App Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
     );
+
+    const appId = appIds[ws];
+    delete appIds[ws];
+    eventHandlers.emit('$close', appId);
   });
 
   ws.on('message', async data => {
@@ -62,12 +72,12 @@ wss.on('connection', ws => {
 
     if (msg.type === 'event') {
       const { subject, data } = msg;
-      eventHandlers.emit(subject, data);
+      eventHandlers.emit(subject, appId, data);
     } else if (msg.type === 'request') {
       const { subject, requestId, data } = msg;
 
       try {
-        const result = await requestHandlers.request(subject, data);
+        const result = await requestHandlers.request(subject, appId, data);
         const msg = {
           type: 'response',
           requestId,

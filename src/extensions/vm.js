@@ -43,7 +43,8 @@ class VM extends EventEmitter {
       name: this.extension.name,
       version: this.extension.version || null,
       broadcaster: this.broadcaster,
-      logger: this.logger
+      logger: this.logger,
+      logError: this.logError.bind(this)
     });
     this.apiMeta = apiMeta;
 
@@ -72,8 +73,13 @@ class VM extends EventEmitter {
         .catch(error => {
           this.emit('error', error);
           this.logger.log('error', this._getLocalStack(error.stack));
+          this.logError(error);
         });
     }
+  }
+
+  logError(error) {
+    this.logger.log('error', this._getLocalStack(error.stack));
   }
 
   _getLocalStack(globalStack) {
@@ -82,7 +88,7 @@ class VM extends EventEmitter {
     globalStack = globalStack.replace(/\n    at/, '\nat');
 
     const localStack = globalStack.replace(
-      new RegExp(`(\n.* )/.*?/extensions/9X65srYuR6mUERXV(/.*)(\n|$)`),
+      new RegExp(`(\n.*?)/.*?/extensions/${this.extension._id}(/.*)(\n|$)`),
       (match, p1, p2, p3) => p1 + p2 + p3
     );
 

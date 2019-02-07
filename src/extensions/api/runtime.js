@@ -5,14 +5,14 @@ const RequestTarget = require('@kothique/request-target');
 const wssApp = require('../../wss-app');
 
 module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
-  const { id, name, version, broadcaster, logger } = data;
+  const { id, name, version, broadcaster, logger, logError } = data;
 
   const eventHandlers = new EventEmitter;
   const requestHandlers = new RequestTarget;
 
   const meta = {};
 
-  wssApp.events.on('extension-event', meta.eventListener = data => {
+  wssApp.events.on('extension-event', meta.eventListener = (appId, data) => {
     const index = data.receivers.indexOf('@main');
     if (index) {
       data.receivers.splice(index, 1);
@@ -30,7 +30,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
     eventHandlers.emit(data.subject, data.sender, data.data);
   });
 
-  wssApp.requests.on('extension-request', meta.requestListener = data => {
+  wssApp.requests.on('extension-request', meta.requestListener = (appId, data) => {
     if (data.id !== id || data.broadcaster !== broadcaster) {
       return;
     }
@@ -44,13 +44,13 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
     id, name, version, broadcaster,
     onEvent: {
       addListener: new ivm.Reference((subject, cbRef) => {
-        eventHandlers.on(subject, (sender, data) => cbRef.applyIgnored(
+        eventHandlers.on(subject, (sender, data) => cbRef.apply(
           undefined,
           [
             sender,
             new ivm.ExternalCopy(data).copyInto()
           ]
-        ));
+        )).catch(logError);
       })
     },
     emitEvent: new ivm.Reference((receivers, subject, data = null) => {
@@ -80,7 +80,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
             sender,
             new ivm.ExternalCopy(data).copyInto()
           ]
-        ))
+        )).catch(logError);
       })
     }
   };

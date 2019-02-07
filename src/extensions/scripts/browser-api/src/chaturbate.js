@@ -21,6 +21,10 @@ window.addEventListener('message', event => {
         data: aaData
       }
     }));
+  } else if (subject === 'broadcast-start') {
+    eventHandlers.dispatchEvent(new CustomEvent('broadcast-start'));
+  } else if (subject === 'broadcast-stop') {
+    eventHandlers.dispatchEvent(new CustomEvent('broadcast-stop'));
   }
 });
 
@@ -39,6 +43,16 @@ export default ({ id, name, version, broadcaster }) => ({
         const { type, data } = event.detail;
         callback(type, data);
       })
+    }
+  },
+  onBroadcastStart: {
+    addListener: callback => {
+      eventHandlers.addEventListener('broadcast-start', () => callback());
+    }
+  },
+  onBroadcastStop: {
+    addListener: callback => {
+      eventHandlers.addEventListener('broadcast-stop', () => callback());
     }
   }
 });

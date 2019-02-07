@@ -11,17 +11,23 @@ const wss = new WebSocket.Server({
 
 wss.broadcast = function (msg) {
   this.clients.forEach(ws => ws.send(msg));
-}
+};
 
 wss.on('listening', () => {
-  console.log(`WS Ext Server: listening on port ${config.wsExtPort}`)
+  console.log(`WS Ext Server: listening on port ${config.wsExtPort}`);
 });
 
 const eventHandlers = new EventEmitter;
 const requestHandlers = new RequestTarget;
 
+let nextExtId = 0;
+const extIds = {};
+
 wss.on('connection', ws => {
   console.log('WS Ext Server: client connected.');
+
+  const extId = extIds[ws] = nextExtId++;
+  eventHandlers.emit('$open', extId);
 
   let nextRequestId = 0;
   const requests = {};
@@ -46,6 +52,11 @@ wss.on('connection', ws => {
   };
 
   ws.on('close', (code, reason) => {
+    const extId = extIds[ws];
+    delete extIds[ws];
+
+    eventHandlers.emit('$close', extId);
+
     console.log(
       `WS Ext Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
     );
@@ -56,12 +67,12 @@ wss.on('connection', ws => {
 
     if (msg.type === 'event') {
       const { subject, data } = msg;
-      eventHandlers.emit(subject, data);
+      eventHandlers.emit(subject, extId, data);
     } else if (msg.type === 'request') {
       const { subject, requestId, data } = msg;
 
       try {
-        const result = await requestHandlers.request(subject, data);
+        const result = await requestHandlers.request(subject, extId, data);
         const msg = {
           type: 'response',
           requestId,

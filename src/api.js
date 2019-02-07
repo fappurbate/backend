@@ -148,7 +148,7 @@ module.exports = router => {
     ctx.body = pages;
   });
 
-  wssExt.events.on('tip', async data => {
+  wssExt.events.on('tip', async (extId, data) => {
     const { broadcaster, tipper, amount } = data;
 
     console.debug(`Tip: ${amount}tkn from ${tipper} to ${broadcaster}`);
@@ -167,7 +167,7 @@ module.exports = router => {
     );
   });
 
-  wssExt.events.on('request-translation', async data => {
+  wssExt.events.on('request-translation', async (extId, data) => {
     const { broadcaster, tabId, msgId, content } = data;
 
     console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
@@ -185,7 +185,7 @@ module.exports = router => {
     });
   });
 
-  wssExt.events.on('request-cancel-translation', async data => {
+  wssExt.events.on('request-cancel-translation', async (extId, data) => {
     const { tabId, msgId } = data;
 
     console.debug(`Cancel translation request (${tabId}, ${msgId}).`);
@@ -197,7 +197,7 @@ module.exports = router => {
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 
-  wssExt.requests.on('tipper-info', async data => {
+  wssExt.requests.on('tipper-info', async (extId, data) => {
     const { broadcaster, tipper } = data;
 
     const tipperInfo = await db.tippers(broadcaster).then(store => store.findOne({ username: tipper }));
@@ -208,7 +208,7 @@ module.exports = router => {
     }
   });
 
-  wssApp.events.on('translation', async data => {
+  wssApp.events.on('translation', async (appId, data) => {
     const { tabId, msgId, content } = data;
 
     console.debug(`Translation: ${content}`);
@@ -220,11 +220,33 @@ module.exports = router => {
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 
-  wssExt.events.on('message', async data => {
+  wssExt.events.on('message', async (extId, data) => {
     wssApp.emit('message', data);
   });
 
-  wssExt.events.on('account-activity', async data => {
+  wssExt.events.on('account-activity', async (extId, data) => {
     wssApp.emit('account-activity', data);
+  });
+
+  const broadcastsByExtId = {};
+
+  wssExt.events.on('$open', extId => {
+    broadcastsByExtId[extId] = new Set;
+  });
+
+  wssExt.events.on('$close', extId => {
+    broadcastsByExtId[extId].forEach(data => {
+      wssApp.emit('broadcast-stop', data);
+    });
+    delete broadcastsByExtId[extId];
+  });
+
+  wssExt.events.on('broadcast-start', async (extId, data) => {
+    wssApp.emit('broadcast-start', data);
+  });
+
+  wssExt.events.on('broadcast-stop', async (extId, data) => {
+    wssApp.emit('broadcast-stop', data);
+    broadcastsByExtId[extId].add(data);
   });
 };
