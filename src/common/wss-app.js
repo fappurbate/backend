@@ -1,33 +1,39 @@
 const WebSocket = require('ws');
 const EventEmitter = require('events');
+const https = require('https');
+const fs = require('fs-extra');
 const RequestTarget = require('@kothique/request-target');
 
-const { CustomError } = require('./common/errors');
-const config = require('./common/config');
+const { CustomError } = require('./errors');
+const config = require('./config');
 
-const wss = new WebSocket.Server({
-  port: config.wsExtPort
+const server = https.createServer({
+  key: fs.readFileSync(config.ssl.key),
+  cert: fs.readFileSync(config.ssl.cert)
 });
+server.listen(config.wsAppPort);
+
+const wss = new WebSocket.Server({ server });
 
 wss.broadcast = function (msg) {
-  this.clients.forEach(ws => ws.send(msg));
-};
+  this.clients.forEach(ws => ws.readyState === WebSocket.OPEN && ws.send(msg));
+}
 
 wss.on('listening', () => {
-  console.log(`WS Ext Server: listening on port ${config.wsExtPort}`);
+  console.log(`WSS App Server: listening on port ${config.wsAppPort}`)
 });
 
 const eventHandlers = new EventEmitter;
 const requestHandlers = new RequestTarget;
 
-let nextExtId = 0;
-const extIds = {};
+let nextAppId = 0;
+const appIds = {};
 
 wss.on('connection', ws => {
-  console.log('WS Ext Server: client connected.');
+  console.log('WSS App Server: client connected.');
 
-  const extId = extIds[ws] = nextExtId++;
-  eventHandlers.emit('$open', extId);
+  const appId = appIds[ws] = nextAppId++;
+  eventHandlers.emit('$open', appId);
 
   let nextRequestId = 0;
   const requests = {};
@@ -52,14 +58,13 @@ wss.on('connection', ws => {
   };
 
   ws.on('close', (code, reason) => {
-    const extId = extIds[ws];
-    delete extIds[ws];
-
-    eventHandlers.emit('$close', extId);
-
     console.log(
-      `WS Ext Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
+      `WSS App Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
     );
+
+    const appId = appIds[ws];
+    delete appIds[ws];
+    eventHandlers.emit('$close', appId);
   });
 
   ws.on('message', async data => {
@@ -67,16 +72,16 @@ wss.on('connection', ws => {
 
     if (msg.type === 'event') {
       const { subject, data } = msg;
-      eventHandlers.emit(subject, extId, data);
+      eventHandlers.emit(subject, appId, data);
     } else if (msg.type === 'request') {
       const { subject, requestId, data } = msg;
 
       try {
-        const result = await requestHandlers.request(subject, extId, data);
+        const result = await requestHandlers.request(subject, appId, data);
         const msg = {
           type: 'response',
           requestId,
-          ...result && { data: result }
+          ...typeof result !== 'undefined' ? { data: result } : null
         };
 
         ws.send(JSON.stringify(msg));
@@ -116,7 +121,7 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  emit(subject, data = null) {
+  emit: (subject, data = null) => {
     const msg = {
       type: 'event',
       subject,

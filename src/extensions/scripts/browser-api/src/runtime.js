@@ -1,4 +1,5 @@
 import RequestTarget from '@kothique/request-target';
+
 import { CustomError } from '../../../../common/errors';
 
 // there will not be window.parent later

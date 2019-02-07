@@ -4,8 +4,10 @@ const asyncBusboy = require('async-busboy');
 const db = require('./common/db');
 const { CustomError } = require('./common/errors');
 const config = require('./common/config');
-const wssApp = require('./wss-app');
-const wssExt = require('./wss-ext');
+const wssApp = require('./common/wss-app');
+const wssExt = require('./common/wss-ext');
+const Broadcast = require('./broadcast');
+const ExtractAccountActivity = require('./extract-account-activity');
 const extensions = require('./extensions');
 
 module.exports = router => {
@@ -222,41 +224,18 @@ module.exports = router => {
     wssApp.emit('account-activity', data);
   });
 
-  const broadcastsByExtId = {};
-  const extractAccountActivityByExtId = {};
-
-  wssExt.events.on('$open', extId => {
-    broadcastsByExtId[extId] = new Set;
-    extractAccountActivityByExtId[extId] = new Set;
+  /* Sends back a number of active broadcasts.
+   * In other words, if it's > 0, then isBroadcasting === true.
+   */
+  wssApp.requests.on('is-broadcasting', (extId, data) => {
+    const { broadcaster } = data;
+    return Broadcast.isBroadcasting(broadcaster);
   });
 
-  wssExt.events.on('$close', extId => {
-    broadcastsByExtId[extId].forEach(data => {
-      wssApp.emit('broadcast-stop', data);
-    });
-    delete broadcastsByExtId[extId];
-
-    extractAccountActivityByExtId[extId].forEach(data => {
-      wssApp.emit('extract-account-activity-stop', data);
-    });
-    delete extractAccountActivityByExtId[extId];
-  });
-
-  wssExt.events.on('broadcast-start', (extId, data) => {
-    wssApp.emit('broadcast-start', data);
-  });
-
-  wssExt.events.on('broadcast-stop', (extId, data) => {
-    wssApp.emit('broadcast-stop', data);
-    broadcastsByExtId[extId].delete(data);
-  });
-
-  wssExt.events.on('extract-account-activity-start', (extId, data) => {
-    wssApp.emit('extract-account-activity-start', data);
-  });
-
-  wssExt.events.on('extract-account-activity-stop', (extId, data) => {
-    wssApp.emit('extract-account-activity-stop', data);
-    extractAccountActivityByExtId[extId].delete(data);
+  /* Sends back a number of active extractions.
+   */
+  wssApp.requests.on('is-extracting-account-activity', (extId, data) => {
+    const { username } = data;
+    return ExtractAccountActivity.isExtracting(username);
   });
 };

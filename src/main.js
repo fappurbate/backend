@@ -6,6 +6,9 @@ const fs = require('fs-extra');
 
 const config = require('./common/config');
 
+require('./broadcast');
+require('./extract-account-activity');
+
 const app = new Koa;
 
 const router = require('koa-router')();

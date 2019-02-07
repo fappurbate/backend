@@ -2,7 +2,7 @@ const { EventEmitter } = require('events');
 const ivm = require('isolated-vm');
 const RequestTarget = require('@kothique/request-target');
 
-const wssApp = require('../../wss-app');
+const wssApp = require('../../common/wss-app');
 
 module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
   const { id, name, version, broadcaster, logger, logError } = data;

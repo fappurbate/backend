@@ -1,7 +1,9 @@
 const { EventEmitter } = require('events');
 const ivm = require('isolated-vm');
 
-const wssExt = require('../../wss-ext');
+const wssExt = require('../../common/wss-ext');
+const Broadcast = require('../../broadcast');
+const ExtractAccountActivity = require('../../extract-account-activity');
 
 module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   const { id, name, version, broadcaster, logger, logError } = data;
@@ -25,47 +27,27 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     }
   });
 
-  const broadcastingExtIds = new Set;
-
-  wssExt.events.on('broadcast-start', meta.broadcastStartListener = (extId, data) => {
+  Broadcast.events.on('start', meta.broadcastStartListener = data => {
     if (data.broadcaster === broadcaster) {
       eventHandlers.emit('broadcast-start');
-      broadcastingExtIds.add(extId);
     }
   });
 
-  wssExt.events.on('broadcast-stop', meta.broadcastStopListener = (extId, data) => {
+  Broadcast.events.on('stop', meta.broadcastStopListener = data => {
     if (data.broadcaster === broadcaster) {
       eventHandlers.emit('broadcast-stop');
-      broadcastingExtIds.delete(extId);
     }
   });
 
-  const extractingAccountActivityExtIds = new Set;
-
-  wssExt.events.on('extract-account-activity-start', meta.extractAccountActivityStartListener = (extId, data) => {
+  ExtractAccountActivity.events.on('start', meta.extractAccountActivityStartListener = data => {
     if (data.username === broadcaster) {
       eventHandlers.emit('extract-account-activity-start');
-      extractingAccountActivityExtIds.add(extId);
     }
   });
 
-  wssExt.events.on('extract-account-activity-stop', meta.extractAccountActivityStopListener = (extId, data) => {
+  ExtractAccountActivity.events.on('stop', meta.extractAccountActivityStopListener = data => {
     if (data.username === broadcaster) {
       eventHandlers.emit('extract-account-activity-stop');
-      extractingAccountActivityExtIds.delete(extId);
-    }
-  });
-
-  wssExt.events.on('$close', meta.extCloseListener = extId => {
-    if (broadcastingExtIds.has(extId)) {
-      eventHandlers.emit('broadcast-stop');
-      broadcastingExtIds.delete(extId);
-    }
-
-    if (extractingAccountActivityExtIds.has(extId)) {
-      eventHandlers.emit('extract-account-activity-stop');
-      extractingAccountActivityExtIds.delete(extId);
     }
   });
 
@@ -94,6 +76,7 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
         ).catch(logError));
       })
     },
+    isBroadcasting: new ivm.Reference(() => Broadcast.isBroadcasting(broadcaster)),
     onBroadcastStart: {
       addListener: new ivm.Reference(cbRef => {
         eventHandlers.on('broadcast-start', () => cbRef.apply(undefined, []).catch(logError));
@@ -113,7 +96,8 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
       addListener: new ivm.Reference(cbRef => {
         eventHandlers.on('extract-account-activity-stop', () => cbRef.apply(undefined, []).catch(logError));
       })
-    }
+    },
+    isExtractingAccountActivity: new ivm.Reference(() => ExtractAccountActivity.isExtracting(broadcaster))
   };
 
   return { api, meta };
@@ -121,10 +105,10 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 
 module.exports.disposeChaturbateAPI = function disposeChaturbateAPI(meta) {
   wssExt.events.off('$close', meta.extCloseListener);
-  wssExt.events.off('extract-account-activity-stop', meta.extractAccountActivityStopListener);
-  wssExt.events.off('extract-account-activity-start', meta.extractAccountActivityStartListener);
-  wssExt.events.off('broadcast-stop', meta.broadcastStopListener);
-  wssExt.events.off('broadcast-start', meta.broadcastStartListener);
+  ExtractAccountActivity.events.off('stop', meta.extractAccountActivityStopListener);
+  ExtractAccountActivity.events.off('start', meta.extractAccountActivityStartListener);
+  Broadcast.events.off('stop', meta.broadcastStopListener);
+  Broadcast.events.off('start', meta.broadcastStartListener);
   wssExt.events.off('account-activity', meta.accountActivityListener);
   wssExt.events.off('message', meta.messageListener);
 };

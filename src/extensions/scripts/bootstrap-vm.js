@@ -67,6 +67,9 @@ global.kck = {
         return global.kck.cb.onBroadcastStop;
       }
     },
+    get isBroadcasting() {
+      return api.cb.isBroadcasting.applySync();
+    },
     onExtractAccountActivityStart: {
       addListener: callback => {
         api.cb.onExtractAccountActivityStart.addListener.applyIgnored(
@@ -80,6 +83,9 @@ global.kck = {
           undefined, [new ivm.Reference(callback)]
         );
       }
+    },
+    get isExtractingAccountActivity() {
+      return api.cb.isExtractingAccountActivity.applySync();
     }
   }
 };

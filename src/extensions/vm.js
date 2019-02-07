@@ -6,7 +6,7 @@ const { EventEmitter } = require('events');
 const { CustomError } = require('../common/errors');
 const { createVMLogger } = require('../common/logger');
 const config = require('../common/config');
-const wssApp = require('../wss-app');
+const wssApp = require('../common/wss-app');
 const { createAPI, disposeAPI } = require('./api');
 const { injectScriptsStart, injectScriptsEnd } = require('./util');
 
