@@ -66,6 +66,20 @@ global.kck = {
         api.cb.onBroadcastStop.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
         return global.kck.cb.onBroadcastStop;
       }
+    },
+    onExtractAccountActivityStart: {
+      addListener: callback => {
+        api.cb.onExtractAccountActivityStart.addListener.applyIgnored(
+          undefined, [new ivm.Reference(callback)]
+        );
+      }
+    },
+    onExtractAccountActivityStop: {
+      addListener: callback => {
+        api.cb.onExtractAccountActivityStop.addListener.applyIgnored(
+          undefined, [new ivm.Reference(callback)]
+        );
+      }
     }
   }
 };

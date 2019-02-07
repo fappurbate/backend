@@ -25,6 +25,10 @@ window.addEventListener('message', event => {
     eventHandlers.dispatchEvent(new CustomEvent('broadcast-start'));
   } else if (subject === 'broadcast-stop') {
     eventHandlers.dispatchEvent(new CustomEvent('broadcast-stop'));
+  } else if (subject === 'extract-account-activity-start') {
+    eventHandlers.dispatchEvent(new CustomEvent('extract-account-activity-start'));
+  } else if (subject === 'extract-account-activity-stop') {
+    eventHandlers.dispatchEvent(new CustomEvent('extract-account-activity-stop'));
   }
 });
 
@@ -53,6 +57,16 @@ export default ({ id, name, version, broadcaster }) => ({
   onBroadcastStop: {
     addListener: callback => {
       eventHandlers.addEventListener('broadcast-stop', () => callback());
+    }
+  },
+  onExtractAccountActivityStart: {
+    addListener: callback => {
+      eventHandlers.addEventListener('extract-account-activity-start', () => callback());
+    }
+  },
+  onExtractAccountActivityStop: {
+    addListener: callback => {
+      eventHandlers.addEventListener('extract-account-activity-stop', () => callback());
     }
   }
 });

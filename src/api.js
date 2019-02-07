@@ -229,9 +229,11 @@ module.exports = router => {
   });
 
   const broadcastsByExtId = {};
+  const extractAccountActivityByExtId = {};
 
   wssExt.events.on('$open', extId => {
     broadcastsByExtId[extId] = new Set;
+    extractAccountActivityByExtId[extId] = new Set;
   });
 
   wssExt.events.on('$close', extId => {
@@ -239,6 +241,11 @@ module.exports = router => {
       wssApp.emit('broadcast-stop', data);
     });
     delete broadcastsByExtId[extId];
+
+    extractAccountActivityByExtId[extId].forEach(data => {
+      wssApp.emit('extract-account-activity-stop', data);
+    });
+    delete extractAccountActivityByExtId[extId];
   });
 
   wssExt.events.on('broadcast-start', async (extId, data) => {
@@ -247,6 +254,15 @@ module.exports = router => {
 
   wssExt.events.on('broadcast-stop', async (extId, data) => {
     wssApp.emit('broadcast-stop', data);
-    broadcastsByExtId[extId].add(data);
+    broadcastsByExtId[extId].delete(data);
+  });
+
+  wssExt.events.on('extract-account-activity-start', async (extId, data) => {
+    wssApp.emit('extract-account-activity-start', data);
+  });
+
+  wssExt.events.on('extract-account-activity-stop', async (extId, data) => {
+    wssApp.emit('extract-account-activity-stop', data);
+    extractAccountActivityByExtId[extId].delete(data);
   });
 };

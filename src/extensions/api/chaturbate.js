@@ -7,7 +7,6 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   const { id, name, version, broadcaster, logger, logError } = data;
 
   const eventHandlers = new EventEmitter;
-  const broadcastingExtIds = new Set;
   const meta = {};
 
   wssExt.events.on('message', meta.messageListener = (extId, data) => {
@@ -26,10 +25,11 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     }
   });
 
+  const broadcastingExtIds = new Set;
+
   wssExt.events.on('broadcast-start', meta.broadcastStartListener = (extId, data) => {
     if (data.broadcaster === broadcaster) {
       eventHandlers.emit('broadcast-start');
-
       broadcastingExtIds.add(extId);
     }
   });
@@ -37,8 +37,23 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   wssExt.events.on('broadcast-stop', meta.broadcastStopListener = (extId, data) => {
     if (data.broadcaster === broadcaster) {
       eventHandlers.emit('broadcast-stop');
-
       broadcastingExtIds.delete(extId);
+    }
+  });
+
+  const extractingAccountActivityExtIds = new Set;
+
+  wssExt.events.on('extract-account-activity-start', meta.extractAccountActivityStartListener = (extId, data) => {
+    if (data.username === broadcaster) {
+      eventHandlers.emit('extract-account-activity-start');
+      extractingAccountActivityExtIds.add(extId);
+    }
+  });
+
+  wssExt.events.on('extract-account-activity-stop', meta.extractAccountActivityStopListener = (extId, data) => {
+    if (data.username === broadcaster) {
+      eventHandlers.emit('extract-account-activity-stop');
+      extractingAccountActivityExtIds.delete(extId);
     }
   });
 
@@ -46,6 +61,11 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     if (broadcastingExtIds.has(extId)) {
       eventHandlers.emit('broadcast-stop');
       broadcastingExtIds.delete(extId);
+    }
+
+    if (extractingAccountActivityExtIds.has(extId)) {
+      eventHandlers.emit('extract-account-activity-stop');
+      extractingAccountActivityExtIds.delete(extId);
     }
   });
 
@@ -79,7 +99,17 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     },
     onBroadcastStop: {
       addListener: new ivm.Reference(cbRef => {
-        eventHandlers.on('broadcast-stop', data => cbRef.apply(undefined, []).catch(logError));
+        eventHandlers.on('broadcast-stop', () => cbRef.apply(undefined, []).catch(logError));
+      })
+    },
+    onExtractAccountActivityStart: {
+      addListener: new ivm.Reference(cbRef => {
+        eventHandlers.on('extract-account-activity-start', () => cbRef.apply(undefined, []).catch(logError));
+      })
+    },
+    onExtractAccountActivityStop: {
+      addListener: new ivm.Reference(cbRef => {
+        eventHandlers.on('extract-account-activity-stop', () => cbRef.apply(undefined, []).catch(logError));
       })
     }
   };
@@ -89,6 +119,8 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 
 module.exports.disposeChaturbateAPI = function disposeChaturbateAPI(meta) {
   wssExt.events.off('$close', meta.extCloseListener);
+  wssExt.events.off('extract-account-activity-stop', meta.extractAccountActivityStopListener);
+  wssExt.events.off('extract-account-activity-start', meta.extractAccountActivityStartListener);
   wssExt.events.off('broadcast-stop', meta.broadcastStopListener);
   wssExt.events.off('broadcast-start', meta.broadcastStartListener);
   wssExt.events.off('account-activity', meta.accountActivityListener);
