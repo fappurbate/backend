@@ -13,11 +13,12 @@ window.addEventListener('message', event => {
       }
     }));
   } else if (subject === 'account-activity') {
-    const { type, data: aaData } = data;
+    const { type, timestamp, data: aaData } = data;
 
     eventHandlers.dispatchEvent(new CustomEvent('account-activity', {
       detail: {
         type,
+        timestamp,
         data: aaData
       }
     }));
@@ -44,8 +45,8 @@ export default ({ id, name, version, broadcaster }) => ({
   onAccountActivity: {
     addListener: callback => {
       eventHandlers.addEventListener('account-activity', event => {
-        const { type, data } = event.detail;
-        callback(type, data);
+        const { type, timestamp, data } = event.detail;
+        callback(type, timestamp, data);
       })
     }
   },

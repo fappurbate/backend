@@ -18,10 +18,10 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   });
 
   wssExt.events.on('account-activity', meta.accountActivityListener = (extId, data) => {
-    const { username, type, data: aaData } = data;
+    const { username, type, timestamp, data: aaData } = data;
 
     if (username === broadcaster) {
-      eventHandlers.emit('account-activity', type, aaData);
+      eventHandlers.emit('account-activity', type, new Date(timestamp), aaData);
     }
   });
 
@@ -83,10 +83,11 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     },
     onAccountActivity: {
       addListener: new ivm.Reference(cbRef => {
-        eventHandlers.on('account-activity', (type, data) => cbRef.apply(
+        eventHandlers.on('account-activity', (type, timestamp, data) => cbRef.apply(
           undefined,
           [
             type,
+            new ivm.ExternalCopy(timestamp).copyInto(),
             new ivm.ExternalCopy(data).copyInto()
           ]
         ).catch(logError));
