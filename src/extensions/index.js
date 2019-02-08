@@ -208,16 +208,37 @@ async function queryOneForBroadcaster(broadcaster, id) {
   return extension;
 }
 
+async function getStreamExtensions(broadcaster) {
+  const extensions = {};
+
+  const vms = getBroadcasterVMs(broadcaster);
+  for (const id in vms) {
+    extensions[id] = vms[id].vm.extension;
+  }
+
+  return extensions;
+}
+
 module.exports = {
   install,
   start,
   stop,
   remove,
   getPage,
-  getStreamPages: broadcaster => Promise.all(
-    Object.keys(getBroadcasterVMs(broadcaster)).map(id => getPage(id, broadcaster, 'stream'))
-  ),
+  getStreamInfo: async broadcaster => {
+    const pages = {};
+
+    await Promise.all(
+      Object.entries(getBroadcasterVMs(broadcaster)).map(async ([id, { vm }]) => {
+        const page = await getPage(id, broadcaster, 'stream');
+        pages[id] = { page, extension: vm.extension }
+      })
+    );
+
+    return pages;
+  },
   getLogs,
   queryForBroadcaster,
-  queryOneForBroadcaster
+  queryOneForBroadcaster,
+  getStreamExtensions
 };

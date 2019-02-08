@@ -104,7 +104,6 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 };
 
 module.exports.disposeChaturbateAPI = function disposeChaturbateAPI(meta) {
-  wssExt.events.off('$close', meta.extCloseListener);
   ExtractAccountActivity.events.off('stop', meta.extractAccountActivityStopListener);
   ExtractAccountActivity.events.off('start', meta.extractAccountActivityStartListener);
   Broadcast.events.off('stop', meta.broadcastStopListener);

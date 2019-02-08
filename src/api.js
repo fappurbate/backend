@@ -146,8 +146,21 @@ module.exports = router => {
   router.get('/api/broadcaster/:broadcaster/extensions/stream', async ctx => {
     const { broadcaster } = ctx.params;
 
-    const pages = await extensions.getStreamPages(broadcaster);
-    ctx.body = pages;
+    const info = await extensions.getStreamInfo(broadcaster);
+    ctx.body = info;
+  });
+
+  router.get('/api/broadcaster/:broadcaster/extension/:extension/stream', async ctx => {
+    const { broadcaster, extension: id } = ctx.params;
+
+    const extension = await db.extensions.findOne({ id: _id })
+      .catch(error => {
+        console.error(`Failed to get extension from DB:`, error);
+        throw new CustomError('extension not found');
+      });
+    const page = await extensions.getPage(id, broadcaster, 'stream');
+
+    ctx.body = { page, extension };
   });
 
   wssExt.events.on('request-translation', async (extId, data) => {
