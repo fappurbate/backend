@@ -24,7 +24,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
     }
 
     if (data.receivers.length > 0) {
-      wssApp.emit('extension-event', data);
+      wssApp.broadcast('extension-event', data);
     }
 
     const forMe = index !== -1;
@@ -83,7 +83,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 
       if (receivers.length === 0) { return; }
 
-      wssApp.emit('extension-event', {
+      wssApp.broadcast('extension-event', {
         id,
         broadcaster,
         receivers,

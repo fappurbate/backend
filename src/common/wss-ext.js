@@ -119,7 +119,7 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  broadcast(subject, data = null) {
+  broadcast: (subject, data = null) => {
     const msg = {
       type: 'event',
       subject,

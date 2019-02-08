@@ -62,7 +62,7 @@ async function install(packageStream) {
     throw new CustomError(`Failed to install extension ${extension._id}.`, { error }, 'ERR_INSTALL_EXTENSION');
   }
 
-  wssApp.emit('extension-install', { extension: { ...extension, running: false } });
+  wssApp.broadcast('extension-install', { extension: { ...extension, running: false } });
 
   return extension._id;
 }
@@ -92,7 +92,7 @@ async function remove(arg) {
 
   await fs.remove(path.join(config.extensionsPath, extension._id));
 
-  wssApp.emit('extension-remove', { extension });
+  wssApp.broadcast('extension-remove', { extension });
 }
 
 async function start(arg, broadcaster) {
@@ -119,7 +119,7 @@ async function start(arg, broadcaster) {
     vm
   };
 
-  wssApp.emit('extension-start', { extension, broadcaster });
+  wssApp.broadcast('extension-start', { extension, broadcaster });
 }
 
 async function stop(arg, broadcaster) {
@@ -140,7 +140,7 @@ async function stop(arg, broadcaster) {
   delete vms[extension._id];
   console.log(`Extension ${extension.name} (${extension._id}) is shut down.`);
 
-  wssApp.emit('extension-stop', { extension, broadcaster });
+  wssApp.broadcast('extension-stop', { extension, broadcaster });
 }
 
 async function getPage(arg, broadcaster, name) {

@@ -169,7 +169,7 @@ module.exports = router => {
     console.debug(`Translation request (${tabId}, ${msgId}): ${content}`);
 
     // Send request to the app
-    wssApp.emit('request-translation', { broadcaster, tabId, msgId, content });
+    wssApp.broadcast('request-translation', { broadcaster, tabId, msgId, content });
 
     // Update the DB
     await db.translationRequests.insert({
@@ -187,7 +187,7 @@ module.exports = router => {
     console.debug(`Cancel translation request (${tabId}, ${msgId}).`);
 
     // Send request to the app
-    wssApp.emit('request-cancel-translation', { tabId, msgId });
+    wssApp.broadcast('request-cancel-translation', { tabId, msgId });
 
     // Update the DB
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
@@ -217,7 +217,7 @@ module.exports = router => {
   });
 
   wssExt.events.on('message', async (extId, data) => {
-    wssApp.emit('message', data);
+    wssApp.broadcast('message', data);
 
     const { info, type, timestamp, data: msgData } = data;
 
@@ -236,7 +236,7 @@ module.exports = router => {
   });
 
   wssExt.events.on('account-activity', (extId, data) => {
-    wssApp.emit('account-activity', data);
+    wssApp.broadcast('account-activity', data);
   });
 
   /* Sends back a number of active broadcasts.

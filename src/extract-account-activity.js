@@ -12,7 +12,7 @@ wssExt.events.on('$open', extId => {
 
 wssExt.events.on('$close', extId => {
   Object.keys(extractAccountActivityByExtId[extId]).forEach(username => {
-    wssApp.emit('extract-account-activity-stop', { username });
+    wssApp.broadcast('extract-account-activity-stop', { username });
     eventHandlers.emit('stop', { username });
   });
   delete extractAccountActivityByExtId[extId];
@@ -21,7 +21,7 @@ wssExt.events.on('$close', extId => {
 wssExt.events.on('extract-account-activity-start', (extId, data) => {
   const { username } = data;
 
-  wssApp.emit('extract-account-activity-start', { username });
+  wssApp.broadcast('extract-account-activity-start', { username });
   eventHandlers.emit('start', { username });
 
   if (extractAccountActivityByExtId[extId][username]) {
@@ -34,7 +34,7 @@ wssExt.events.on('extract-account-activity-start', (extId, data) => {
 wssExt.events.on('extract-account-activity-stop', (extId, data) => {
   const { username } = data;
 
-  wssApp.emit('extract-account-activity-stop', { username });
+  wssApp.broadcast('extract-account-activity-stop', { username });
   eventHandlers.emit('stop', { username });
 
   if (--extractAccountActivityByExtId[extId][username] === 0) {

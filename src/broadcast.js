@@ -12,7 +12,7 @@ wssExt.events.on('$open', extId => {
 
 wssExt.events.on('$close', extId => {
   Object.keys(broadcastsByExtId[extId]).forEach(broadcaster => {
-    wssApp.emit('broadcast-stop', { broadcaster });
+    wssApp.broadcast('broadcast-stop', { broadcaster });
     eventHandlers.emit('stop', { broadcaster });
   });
   delete broadcastsByExtId[extId];
@@ -21,7 +21,7 @@ wssExt.events.on('$close', extId => {
 wssExt.events.on('broadcast-start', (extId, data) => {
   const { broadcaster } = data;
 
-  wssApp.emit('broadcast-start', { broadcaster });
+  wssApp.broadcast('broadcast-start', { broadcaster });
   eventHandlers.emit('start', { broadcaster });
 
   if (broadcaster in broadcastsByExtId[extId]) {
@@ -34,7 +34,7 @@ wssExt.events.on('broadcast-start', (extId, data) => {
 wssExt.events.on('broadcast-stop', (extId, data) => {
   const { broadcaster } = data;
 
-  wssApp.emit('broadcast-stop', { broadcaster });
+  wssApp.broadcast('broadcast-stop', { broadcaster });
   eventHandlers.emit('stop', { broadcaster });
 
   if (!broadcastsByExtId[extId][broadcaster]) { return; }

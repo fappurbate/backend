@@ -28,11 +28,13 @@ const requestHandlers = new RequestTarget;
 
 let nextAppId = 0;
 const appIds = {};
+const wsByAppId = {};
 
 wss.on('connection', ws => {
   console.log('WSS App Server: client connected.');
 
   const appId = appIds[ws] = nextAppId++;
+  wsByAppId[appId] = ws;
   eventHandlers.emit('$open', appId);
 
   let nextRequestId = 0;
@@ -58,13 +60,15 @@ wss.on('connection', ws => {
   };
 
   ws.on('close', (code, reason) => {
+    const appId = appIds[ws];
+    delete appIds[ws];
+    delete wsByAppId[appId];
+
+    eventHandlers.emit('$close', appId);
+
     console.log(
       `WSS App Server: client disconnected with code ${code}${reason ? ` and reason: ${reason}` : ''}.`
     );
-
-    const appId = appIds[ws];
-    delete appIds[ws];
-    eventHandlers.emit('$close', appId);
   });
 
   ws.on('message', async data => {
@@ -121,7 +125,7 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  emit: (subject, data = null) => {
+  broadcast: (subject, data = null) => {
     const msg = {
       type: 'event',
       subject,
@@ -129,5 +133,20 @@ module.exports = {
     };
 
     wss.broadcast(JSON.stringify(msg));
+  },
+  emit(appId, subject, data = null) {
+    const ws = wsByAppId[appId];
+    if (!ws) {
+      console.debug(`No WS client found with id ${appId}.`);
+      return;
+    }
+
+    const msg = {
+      type: 'event',
+      subject,
+      ...data && { data }
+    };
+
+    ws.send(JSON.stringify(msg));
   }
 };

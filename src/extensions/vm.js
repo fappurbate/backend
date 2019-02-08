@@ -21,7 +21,7 @@ class VM extends EventEmitter {
       extensionId: extension._id,
       broadcaster,
       onLogged(info) {
-        wssApp.emit('extension-log', { extension, broadcaster, info });
+        wssApp.broadcast('extension-log', { extension, broadcaster, info });
       }
     });
 
