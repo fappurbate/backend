@@ -61,7 +61,19 @@ function isBroadcasting(broadcaster) {
   return count;
 }
 
+function sendMessage(broadcaster, message) {
+  Object.entries(broadcastsByExtId).forEach(([extId, broadcasts]) => {
+    if (broadcaster in broadcasts) {
+      wssExt.emit(extId, 'send-message', {
+        broadcaster,
+        message
+      });
+    }
+  });
+}
+
 module.exports = {
   events: eventHandlers,
-  isBroadcasting
+  isBroadcasting,
+  sendMessage
 };

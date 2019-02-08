@@ -94,6 +94,10 @@ export default ({ id, name, version, broadcaster, init }) => {
     },
     get isExtractingAccountActivity() {
       return state.isExtractingAccountActivity;
-    }
+    },
+    sendMessage: message => parent.postMessage({
+      subject: 'send-message',
+      data: { message }
+    }, '*')
   };
 };

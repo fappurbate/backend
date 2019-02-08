@@ -22,11 +22,13 @@ const requestHandlers = new RequestTarget;
 
 let nextExtId = 0;
 const extIds = {};
+const wsByExtId = {};
 
 wss.on('connection', ws => {
   console.log('WS Ext Server: client connected.');
 
   const extId = extIds[ws] = nextExtId++;
+  wsByExtId[extId] = ws;
   eventHandlers.emit('$open', extId);
 
   let nextRequestId = 0;
@@ -54,6 +56,7 @@ wss.on('connection', ws => {
   ws.on('close', (code, reason) => {
     const extId = extIds[ws];
     delete extIds[ws];
+    delete wsByExtId[extId];
 
     eventHandlers.emit('$close', extId);
 
@@ -116,7 +119,7 @@ wss.on('connection', ws => {
 module.exports = {
   events: eventHandlers,
   requests: requestHandlers,
-  emit(subject, data = null) {
+  broadcast(subject, data = null) {
     const msg = {
       type: 'event',
       subject,
@@ -124,5 +127,20 @@ module.exports = {
     };
 
     wss.broadcast(JSON.stringify(msg));
+  },
+  emit(extId, subject, data = null) {
+    const ws = wsByExtId[extId];
+    if (!ws) {
+      console.debug(`No WS client found with id ${extId}.`);
+      return;
+    }
+
+    const msg = {
+      type: 'event',
+      subject,
+      ...data && { data }
+    };
+
+    ws.send(JSON.stringify(msg));
   }
 };

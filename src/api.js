@@ -210,7 +210,7 @@ module.exports = router => {
     console.debug(`Translation: ${content}`);
 
     // Send request to the extension
-    wssExt.emit('translation', { tabId, msgId, content });
+    wssExt.broadcast('translation', { tabId, msgId, content });
 
     // Update the DB
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
@@ -252,5 +252,10 @@ module.exports = router => {
   wssApp.requests.on('is-extracting-account-activity', (extId, data) => {
     const { username } = data;
     return ExtractAccountActivity.isExtracting(username);
+  });
+
+  wssApp.events.on('send-message', (appId, data) => {
+    const { broadcaster, message } = data;
+    Broadcast.sendMessage(broadcaster, message);
   });
 };

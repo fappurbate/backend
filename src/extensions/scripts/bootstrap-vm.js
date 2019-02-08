@@ -108,6 +108,7 @@ global.kck = {
     },
     get isExtractingAccountActivity() {
       return api.cb.isExtractingAccountActivity.applySync();
-    }
+    },
+    sendMessage: message => api.cb.sendMessage.applyIgnored(undefined, [message])
   }
 };

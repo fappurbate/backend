@@ -14,7 +14,7 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   wssExt.events.on('message', meta.messageListener = (extId, data) => {
     const { info, type, timestamp, data: msgData } = data;
 
-    if (info.broadcast.active && info.chat.active && info.chat.ready && info.chat.owner === broadcaster) {
+    if (info.broadcast.active && info.chat.active && info.chat.owner === broadcaster) {
       eventHandlers.emit('message', type, new Date(timestamp), msgData);
     }
   });
@@ -97,7 +97,8 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
         eventHandlers.on('extract-account-activity-stop', () => cbRef.apply(undefined, []).catch(logError));
       })
     },
-    isExtractingAccountActivity: new ivm.Reference(() => ExtractAccountActivity.isExtracting(broadcaster))
+    isExtractingAccountActivity: new ivm.Reference(() => ExtractAccountActivity.isExtracting(broadcaster)),
+    sendMessage: new ivm.Reference(message => Broadcast.sendMessage(broadcaster, message))
   };
 
   return { api, meta };
