@@ -211,6 +211,8 @@ module.exports = router => {
     if (type === 'tip') {
       const { username, amount } = msgData;
 
+      if (!Broadcast.isBroadcasting(info.chat.owner)) { return; }
+
       console.debug(`Tip: ${amount}tkn from ${username} to ${info.chat.owner}`);
 
       // Update the DB
