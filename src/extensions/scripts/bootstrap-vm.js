@@ -10,6 +10,28 @@ global.kck = {
     name: api.runtime.name,
     version: api.runtime.version,
     broadcaster: api.runtime.broadcaster,
+    onStart: {
+      addListener: callback => {
+        api.runtime.onStart.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
+        return global.kck.runtime.onStart;
+      }
+    },
+    onStop: {
+      addHandler: handler => {
+        api.runtime.onStop.addHandler.applyIgnored(undefined, [new ivm.Reference(callback => {
+          const result = handler();
+
+          if (typeof result.then === 'function') {
+            result.finally(() => {
+              callback.applyIgnored();
+            });
+          } else {
+            callback.applyIgnored();
+          }
+        })]);
+        return global.kck.runtime.onStop;
+      }
+    },
     onEvent: {
       addListener: (subject, callback) => {
         api.runtime.onEvent.addListener.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);

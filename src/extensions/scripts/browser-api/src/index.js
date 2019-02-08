@@ -23,8 +23,6 @@ const data = {
   }
 };
 
-console.log(data);
-
 Object.values(nodes).forEach(node => node && node.remove());
 
 window.kck = {

@@ -27,6 +27,9 @@ class VM extends EventEmitter {
 
     this.clean = true;
     this.path = path.join(config.extensionsPath, this.extension._id);
+
+    this.onStart = null;
+    this.onStop = null;
   }
 
   async start() {
@@ -44,7 +47,13 @@ class VM extends EventEmitter {
       version: this.extension.version || null,
       broadcaster: this.broadcaster,
       logger: this.logger,
-      logError: this.logError.bind(this)
+      logError: this.logError.bind(this),
+      onStart: callback => {
+        this.onStart = callback;
+      },
+      onStop: handler => {
+        this.onStop = handler;
+      }
     });
     this.apiMeta = apiMeta;
 
@@ -68,14 +77,15 @@ class VM extends EventEmitter {
       return null;
     });
 
-    if (mainModule) {
-      mainModule.evaluate()
-        .catch(error => {
-          this.emit('error', error);
-          this.logger.log('error', this._getLocalStack(error.stack));
-          this.logError(error);
-        });
+    try {
+      await mainModule.evaluate();
+    } catch (error) {
+      this.emit('error', error);
+      this.logger.log('error', this._getLocalStack(error.stack));
+      this.logError(error);
     }
+
+    this.onStart && this.onStart();
   }
 
   logError(error) {
@@ -95,8 +105,10 @@ class VM extends EventEmitter {
     return localStack;
   }
 
-  dispose() {
+  async dispose() {
     if (this.clean) { return; }
+
+    this.onStop && await this.onStop();
 
     this.context.release();
     this.isolate.dispose();

@@ -131,13 +131,14 @@ async function stop(arg, broadcaster) {
   const vms = getBroadcasterVMs(broadcaster);
 
   const vmInfo = vms[extension._id];
-  delete vms[extension._id];
   if (!vmInfo) {
     throw new CustomError(`Couldn't stop extension which is not running.`, {}, 'ERR_EXTENSION_ALREADY_STOPPED');
   }
 
   console.log(`Shutting down extension ${extension.name} (${extension._id})...`);
-  vmInfo.vm.dispose();
+  await vmInfo.vm.dispose();
+  delete vms[extension._id];
+  console.log(`Extension ${extension.name} (${extension._id}) is shut down.`);
 
   wssApp.emit('extension-stop', { extension, broadcaster });
 }

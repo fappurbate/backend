@@ -5,12 +5,17 @@ const RequestTarget = require('@kothique/request-target');
 const wssApp = require('../../common/wss-app');
 
 module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
-  const { id, name, version, broadcaster, logger, logError } = data;
+  const { id, name, version, broadcaster, logger, logError,
+    onStart, onStop } = data;
 
   const eventHandlers = new EventEmitter;
   const requestHandlers = new RequestTarget;
 
   const meta = {};
+
+  onStart(() => eventHandlers.emit('start'));
+
+  onStop(() => requestHandlers.request('stop'));
 
   wssApp.events.on('extension-event', meta.eventListener = (appId, data) => {
     const index = data.receivers.indexOf('@main');
@@ -42,6 +47,21 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 
   const api = {
     id, name, version, broadcaster,
+    onStart: {
+      addListener: new ivm.Reference(cbRef => {
+        eventHandlers.on('start', () => cbRef.apply(
+          undefined,
+          []
+        ).catch(logError));
+      })
+    },
+    onStop: {
+      addHandler: new ivm.Reference(handler => {
+        requestHandlers.on('stop', () => new Promise(resolve =>
+          handler.apply(undefined, [new ivm.Reference(resolve)]).catch(logError)
+        ))
+      })
+    },
     onEvent: {
       addListener: new ivm.Reference((subject, cbRef) => {
         eventHandlers.on(subject, (sender, data) => cbRef.apply(

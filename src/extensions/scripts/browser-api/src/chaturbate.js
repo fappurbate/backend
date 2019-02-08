@@ -13,7 +13,6 @@ export default ({ id, name, version, broadcaster, init }) => {
     isBroadcasting: Number(init.isBroadcasting),
     isExtractingAccountActivity: Number(init.isExtractingAccountActivity)
   };
-  console.log(state);
 
   window.addEventListener('message', event => {
     const { subject, data } = event.data;
