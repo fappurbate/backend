@@ -7,15 +7,23 @@ const nodes = {
   id: document.querySelector('meta[data-name="id"]'),
   name: document.querySelector('meta[data-name="name"]'),
   version: document.querySelector('meta[data-name="version"]'),
-  broadcaster: document.querySelector('meta[data-name="broadcaster"]')
+  broadcaster: document.querySelector('meta[data-name="broadcaster"]'),
+  initIsBroadcasting: document.querySelector('meta[data-name="init:is-broadcasting"]'),
+  initIsExtractingAccountActivity: document.querySelector('meta[data-name="init:is-extracting-account-activity"]')
 };
 
 const data = {
   id: nodes.id.getAttribute('data-content'),
   name: nodes.name.getAttribute('data-content'),
   version: nodes.version ? nodes.version.getAttribute('data-content') : null,
-  broadcaster: nodes.broadcaster.getAttribute('data-content')
+  broadcaster: nodes.broadcaster.getAttribute('data-content'),
+  init: {
+    isBroadcasting: nodes.initIsBroadcasting.getAttribute('data-content'),
+    isExtractingAccountActivity: nodes.initIsExtractingAccountActivity.getAttribute('data-content')
+  }
 };
+
+console.log(data);
 
 Object.values(nodes).forEach(node => node && node.remove());
 
@@ -40,7 +48,7 @@ Object.defineProperty(window, 'onmessage', {
   get: () => oldOnMessage
 });
 
-// const oldParent = window.parent;
-// Object.defineProperty(window, 'parent', {
-//   get: () => console.error(`There's no parent anymore.`)
-// });
+const oldParent = window.parent;
+Object.defineProperty(window, 'parent', {
+  get: () => console.error(`There's no parent anymore.`)
+});
