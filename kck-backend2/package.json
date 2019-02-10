@@ -1,0 +1,43 @@
+{
+  "name": "kck-backend2",
+  "version": "0.0.1",
+  "description": "My Moleculer microservices project",
+  "scripts": {
+    "dev": "moleculer-runner --repl --hot services",
+    "start": "moleculer-runner",
+    "cli": "moleculer connect NATS",
+    "ci": "jest --watch",
+    "test": "jest --coverage",
+    "lint": "eslint services",
+    "dc:up": "docker-compose up --build -d",
+    "dc:down": "docker-compose down"
+  },
+  "keywords": [
+    "chaturbate",
+    "webcam",
+    "kck"
+  ],
+  "author": "",
+  "devDependencies": {
+    "eslint": "^5.10.0",
+    "jest": "^23.6.0",
+    "jest-cli": "^23.6.0",
+    "moleculer-repl": "^0.5.3"
+  },
+  "dependencies": {
+    "moleculer-web": "^0.8.0",
+    "nats": "^1.0.1",
+    "moleculer": "^0.13.0"
+  },
+  "engines": {
+    "node": ">= 8.x.x"
+  },
+  "jest": {
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node",
+    "rootDir": "./services",
+    "roots": [
+      "../test"
+    ]
+  }
+}
