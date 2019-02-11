@@ -30,6 +30,8 @@ module.exports = router => {
     ctx.body = requests;
   });
 
+  // ------------
+
   router.get('/api/broadcaster/:broadcaster/extensions', async ctx => {
     const { broadcaster } = ctx.params;
 
@@ -163,6 +165,7 @@ module.exports = router => {
     ctx.body = { page, extension };
   });
 
+  // done
   wssExt.events.on('request-translation', async (extId, data) => {
     const { broadcaster, tabId, msgId, content } = data;
 
@@ -181,6 +184,7 @@ module.exports = router => {
     });
   });
 
+  // done
   wssExt.events.on('request-cancel-translation', async (extId, data) => {
     const { tabId, msgId } = data;
 
@@ -193,6 +197,7 @@ module.exports = router => {
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 
+  // done
   wssExt.requests.on('tipper-info', async (extId, data) => {
     const { broadcaster, tipper } = data;
 
@@ -204,6 +209,7 @@ module.exports = router => {
     }
   });
 
+  // done
   wssApp.events.on('translation', async (appId, data) => {
     const { tabId, msgId, content } = data;
 
@@ -216,6 +222,7 @@ module.exports = router => {
     await db.translationRequests.remove({ tabId, msgId }, { multi: true });
   });
 
+  // done
   wssExt.events.on('message', async (extId, data) => {
     wssApp.broadcast('message', data);
 
@@ -235,10 +242,12 @@ module.exports = router => {
     }
   });
 
+  // done
   wssExt.events.on('account-activity', (extId, data) => {
     wssApp.broadcast('account-activity', data);
   });
 
+  // done
   /* Sends back a number of active broadcasts.
    * In other words, if it's > 0, then isBroadcasting === true.
    */
@@ -247,6 +256,7 @@ module.exports = router => {
     return Broadcast.isBroadcasting(broadcaster);
   });
 
+  // TODO
   /* Sends back a number of active extractions.
    */
   wssApp.requests.on('is-extracting-account-activity', (extId, data) => {
@@ -254,6 +264,7 @@ module.exports = router => {
     return ExtractAccountActivity.isExtracting(username);
   });
 
+  // done
   wssApp.events.on('send-message', (appId, data) => {
     const { broadcaster, message } = data;
     Broadcast.sendMessage(broadcaster, message);
