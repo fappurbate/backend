@@ -24,7 +24,7 @@ module.exports = {
 	// Enable/disable logging or use custom logger. More info: https://moleculer.services/docs/0.13/logging.html
 	logger: true,
 	// Log level for built-in console logger. Available values: trace, debug, info, warn, error, fatal
-	logLevel: 'debug',
+	logLevel: 'info',
 	// Log formatter for built-in console logger. Available values: default, simple, short. It can be also a `Function`.
 	logFormatter: 'default',
 	// Custom object & array printer for built-in console logger.

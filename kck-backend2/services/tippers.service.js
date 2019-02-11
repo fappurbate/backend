@@ -22,7 +22,9 @@ module.exports = {
       async handler(ctx) {
         const { username, broadcaster, amount } = ctx.params;
 
-				this.logger.debug(`${usernamed} tipped ${amount}tkn to ${broadcaster}`);
+				this.logger.debug(`${username} tipped ${amount}tkn to ${broadcaster}`);
+
+				await ctx.call('broadcasters.ensureExists', { broadcaster });
 
         await this.adapter.db.update({ username }, {
           $inc: { [`tipInfo.${broadcaster}`]: amount }
@@ -37,16 +39,19 @@ module.exports = {
       async handler(ctx) {
         const { broadcaster } = ctx.params;
 
-        const tippers = await this.adapter.find({
-          [`tipInfo.${broadcaster}`]: { $exists: true }
+        const result = await ctx.call('tippers.list', {
+					...ctx.params,
+					query: {
+	          [`tipInfo.${broadcaster}`]: { $exists: true }
+					}
         });
-
-        tippers.forEach(tipper => {
+console.log(result);
+        result.rows.forEach(tipper => {
           tipper.amount = tipper.tipInfo[broadcaster];
           delete tipper.tipInfo;
         });
 
-        return tippers;
+        return result;
       }
     },
 		oneForBroadcaster: {

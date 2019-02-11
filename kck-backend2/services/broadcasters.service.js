@@ -115,6 +115,21 @@ module.exports = {
 					}
 				});
 			}
+		},
+		ensureExists: {
+			params: {
+				broadcaster: 'string'
+			},
+			visibility: 'public',
+			async handler(ctx) {
+				const { broadcaster } = ctx.params;
+
+				await this.adapter.db.update(
+					{ username: broadcaster },
+					{ $set: { username: broadcaster } },
+					{ upsert: true }
+				);
+			}
 		}
 	}
 };
