@@ -11,11 +11,13 @@ const ExtractAccountActivity = require('./extract-account-activity');
 const extensions = require('./extensions');
 
 module.exports = router => {
+  // done
   router.get('/api/broadcasters', async ctx => {
     const broadcasters = await db.broadcasters.find().sort({ username: 1 });
     ctx.body = broadcasters;
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/tippers', async ctx => {
     const { broadcaster } = ctx.params;
 
@@ -23,6 +25,7 @@ module.exports = router => {
     ctx.body = tippers;
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/translations', async ctx => {
     const { broadcaster } = ctx.params;
 
@@ -30,8 +33,7 @@ module.exports = router => {
     ctx.body = requests;
   });
 
-  // ------------
-
+  // done
   router.get('/api/broadcaster/:broadcaster/extensions', async ctx => {
     const { broadcaster } = ctx.params;
 
@@ -39,6 +41,7 @@ module.exports = router => {
     ctx.body = result;
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/extension/:extension', async ctx => {
     const { broadcaster, extension: id } = ctx.params;
 
@@ -54,6 +57,7 @@ module.exports = router => {
     }
   });
 
+  // done
   router.post('/api/extensions', async ctx => {
     const { files } = await asyncBusboy(ctx.req);
 
@@ -71,6 +75,7 @@ module.exports = router => {
     }
   });
 
+  // done
   router.delete('/api/extension/:id', async ctx => {
     const { id } = ctx.params;
 
@@ -87,6 +92,7 @@ module.exports = router => {
     }
   });
 
+  // done
   router.post('/api/broadcaster/:broadcaster/extension/:extension/start', async ctx => {
     const { extension: id, broadcaster } = ctx.params;
 
@@ -103,6 +109,7 @@ module.exports = router => {
     }
   });
 
+  // done
   router.post('/api/broadcaster/:broadcaster/extension/:extension/stop', async ctx => {
     const { extension: id, broadcaster } = ctx.params;
 
@@ -119,6 +126,7 @@ module.exports = router => {
     }
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/extension/:extension/logs', async ctx => {
     const { extension: id, broadcaster } = ctx.params;
     const { rows = null } = ctx.query;
@@ -138,6 +146,7 @@ module.exports = router => {
     }
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/extension/:extension/page/:page', async ctx => {
     const { broadcaster, extension: id, page: pageName } = ctx.params;
 
@@ -145,6 +154,7 @@ module.exports = router => {
     ctx.body = page;
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/extensions/stream', async ctx => {
     const { broadcaster } = ctx.params;
 
@@ -152,6 +162,7 @@ module.exports = router => {
     ctx.body = info;
   });
 
+  // done
   router.get('/api/broadcaster/:broadcaster/extension/:extension/stream', async ctx => {
     const { broadcaster, extension: id } = ctx.params;
 
@@ -256,7 +267,7 @@ module.exports = router => {
     return Broadcast.isBroadcasting(broadcaster);
   });
 
-  // TODO
+  // done
   /* Sends back a number of active extractions.
    */
   wssApp.requests.on('is-extracting-account-activity', (extId, data) => {

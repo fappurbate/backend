@@ -3,6 +3,7 @@
 const ApiGateway = require('moleculer-web');
 const SocketIOService = require('@kothique/moleculer-io');
 const { MoleculerError } = require('moleculer').Errors;
+const asyncBusboy = require('async-busboy');
 
 module.exports = {
 	name: 'gateway',
@@ -12,11 +13,29 @@ module.exports = {
 
 		routes: [{
 			path: '/api',
+			async onBeforeCall(ctx, route, req, res) {
+				try {
+					const { files } = await asyncBusboy(req);
+					ctx.meta.files = files;
+				} catch (error) {
+					// no files were submitted with the request
+				}
+			},
 			mappingPolicy: 'restrict',
 			aliases: {
-				'GET broadcasters':                          'broadcasters.list',
-				'GET broadcaster/:broadcaster/tippers':      'tippers.forBroadcaster',
-				'GET broadcaster/:broadcaster/translations': 'translationRequests.forBroadcaster'
+				'GET    broadcasters':                                               'broadcasters.list',
+				'GET    broadcaster/:broadcaster/tippers':                           'tippers.forBroadcaster',
+				'GET    broadcaster/:broadcaster/translations':                      'translationRequests.forBroadcaster',
+				'GET    broadcaster/:broadcaster/extensions':                        'extensions.forBroadcaster',
+				'GET    broadcaster/:broadcaster/extension/:extensionId':            'extensions.oneForBroadcaster',
+				'POST   extensions':                                                 'extensions.install',
+				'DELETE extension/:extensionId':                                     'extensions.uninstall',
+				'POST   broadcaster/:broadcaster/extension/:extensionId/start':      'extensions.start',
+				'POST   broadcaster/:broadcaster/extension/:extensionId/stop':       'extensions.stop',
+				'GET    broadcaster/:broadcaster/extension/:extensionId/logs':       'extensions.getLogs',
+				'GET    broadcaster/:broadcaster/extension/:extensionId/page/:page': 'extensions.getPage',
+				'GET    broadcaster/:broadcaster/extensions/stream':                 'extensions.getStreamInfo',
+				'GET    broadcaster/:broadcaster/extension/:extensionId/stream':     'extensions.getStream'
 			},
 			whitelist: [/.*/]
 		}],
@@ -25,25 +44,26 @@ module.exports = {
 			namespaces: {
 				'/ext': {
 					events: {
-						'request': {
+						'event': {
 							mappingPolicy: 'restrict',
 							aliases: {
-								'tipper': 'tippers.oneForBroadcaster',
-								'is-broadcasting': 'broadcasters.isBroadcasting'
+								'request-translation':        'translationRequests.request',
+								'request-cancel-translation': 'translationRequests.cancel',
+								'message':                    'messages.handle',
+								'account-activity':           'accountActivity.handle',
+								'broadcast-start':            'broadcasters.onBroadcastStart',
+								'broadcast-stop':             'broadcasters.onBroadcastStop'
 							},
 							onBeforeCall: function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
 							}
 						},
-						'event': {
+						'request': {
 							mappingPolicy: 'restrict',
 							aliases: {
-								'request-translation': 'translationRequests.request',
-								'request-cancel-translation': 'translationRequests.cancel',
-								'message': 'messages.handle',
-								'account-activity': 'accountActivity.handle',
-								'broadcast-start': 'broadcasters.onBroadcastStart',
-								'broadcast-stop': 'broadcasters.onBroadcastStop'
+								'tipper':                         'tippers.oneForBroadcaster',
+								'is-broadcasting':                'broadcasters.isBroadcasting',
+								'is-extracting-account-activity': 'broadcasters.isExtractingAccountActivity'
 							},
 							onBeforeCall: function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
@@ -53,20 +73,23 @@ module.exports = {
 				},
 				'/app': {
 					events: {
-						'request': {
+						'event': {
 							mappingPolicy: 'restrict',
 							aliases: {
-								'tipper': 'tippers.oneForBroadcaster',
-								'is-broadcasting': 'broadcasters.isBroadcasting'
+								'translation':     'translationRequests.resolve',
+								'extension-event': 'extensions.onEvent'
 							},
 							onBeforeCall: async function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
 							}
 						},
-						'event': {
+						'request': {
 							mappingPolicy: 'restrict',
 							aliases: {
-								'translation': 'translationRequests.resolve'
+								'tipper':                         'tippers.oneForBroadcaster',
+								'is-broadcasting':                'broadcasters.isBroadcasting',
+								'is-extracting-account-activity': 'broadcasters.isExtractingAccountActivity',
+								'extension-request':              'extensions.onRequest'
 							},
 							onBeforeCall: async function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;
@@ -86,7 +109,7 @@ module.exports = {
 			visibility: 'public',
 			handler(ctx) {
 				const { subject, data } = ctx.params;
-				this.io.of('ext').emit(subject, data);
+				this.io.of('ext').emit('event', subject, data);
 			}
 		},
 		'ext.emit': {
@@ -104,7 +127,7 @@ module.exports = {
 					throw new MoleculerError('Socket not found', 404, 'ERR_SOCKET_NOT_FOUND', { socketId });
 				}
 
-				socket.emit(subject, data);
+				socket.emit('event', subject, data);
 			}
 		},
 		'app.broadcast': {
@@ -115,7 +138,7 @@ module.exports = {
 			visibility: 'public',
 			handler(ctx) {
 				const { subject, data } = ctx.params;
-				this.io.of('app').emit(subject, data);
+				this.io.of('app').emit('event', subject, data);
 			}
 		},
 		'app.emit': {
@@ -133,7 +156,7 @@ module.exports = {
 					throw new MoleculerError('Socket not found', 404, 'ERR_SOCKET_NOT_FOUND', { socketId });
 				}
 
-				socket.emit(subject, data);
+				socket.emit('event', subject, data);
 			}
 		}
 	},
@@ -152,10 +175,10 @@ module.exports = {
 			this.io.of(ns).on('connect', this[ns].connectionListener = socket => {
 				this[ns].clients[socket.id] = socket;
 
-				this.emit('$connect', { socket });
+				this.broker.emit(`socket.${ns}.connect`, { socket });
 
 				socket.on('disconnect', () => {
-					this.emit('$disconnect', { socket });
+					this.broker.emit(`socket.${ns}.disconnect`, { socket });
 					delete this[ns].clients[socket.id];
 				});
 		}));

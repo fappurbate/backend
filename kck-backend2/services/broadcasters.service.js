@@ -13,20 +13,31 @@ module.exports = {
 	},
 	created() {
 		this.online = {};
+		this.extracting = {};
 	},
 	events: {
-		'gateway.$connect'({ socket }) {
+		'socket.ext.connect'({ socket }) {
 			this.online[socket.id] = {};
+			this.extracting[socket.id] = {};
 		},
-		'gateway.$disconnect'({ socket }) {
-			Object.keys(this.online[socket.id]).forEach(broadcaster => {
-				this.broker.call('gateway.app.broadcast', {
+		async 'socket.ext.disconnect'({ socket }) {
+			await Promise.all(Object.keys(this.online[socket.id]).map(async broadcaster => {
+				await this.broker.call('gateway.app.broadcast', {
 					subject: 'broadcast-stop',
 					data: { broadcaster }
 				});
-				this.emit('broadcast.stop', { broadcaster });
-			});
+				await this.broker.emit('broadcast.stop', { broadcaster });
+			}));
 			delete this.online[socket.id];
+
+			await Promise.all(Object.keys(this.extracting[socket.id]).map(async username => {
+				await this.broker.call('gateway.app.broadcast', {
+					subject: 'extract-account-activity-stop',
+					data: { username }
+				});
+				await this.broker.emit('extract-account-activity.stop', { username });
+			}));
+			delete this.extracting[socket.id];
 		}
 	},
 	actions: {
@@ -38,7 +49,7 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
 
-				ctx.call('gateway.app.broadcast', {
+				await ctx.call('gateway.app.broadcast', {
 					subject: 'broadcast-start',
 					data: { broadcaster }
 				});
@@ -60,7 +71,7 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
 
-				ctx.call('gateway.app.broadcast', {
+				await ctx.call('gateway.app.broadcast', {
 					subject: 'broadcast-stop',
 					data: { broadcaster }
 				});
@@ -72,7 +83,51 @@ module.exports = {
 				if (--this.online[socketId][broadcaster] === 0) {
 					delete this.online[socketId][broadcaster];
 				}
+			},
+		},
+		onExtractAccountActivityStart: {
+			params: {
+				username: 'string'
+			},
+			visibility: 'published',
+			async handler(ctx) {
+				const { username } = ctx.params;
+
+				await ctx.call('gateway.app.broadcast', {
+					subject: 'extract-account-activity-start',
+					data: { username }
+				});
+				ctx.emit('extract-account-activity.start', { username });
+
+				const socketId = ctx.meta.socket.id;
+				if (username in this.extracting[socketId]) {
+					this.extracting[socketId][username]++;
+				} else {
+					this.extracting[socketId][username] = 1;
+				}
 			}
+		},
+		onExtractAccountActivityStop: {
+			params: {
+				username: 'string'
+			},
+			visibility: 'published',
+			async handler(ctx) {
+				const { username } = ctx.params;
+
+				await ctx.call('gateway.app.broadcast', {
+					subject: 'extract-account-activity-stop',
+					data: { username }
+				});
+				ctx.emit('extract-account-activity.stop', { username });
+
+				const socketId = ctx.meta.socket.id;
+				if (!this.extracting[socketId][username]) { return; }
+
+				if (--this.extracting[socketId][username] === 0) {
+					delete this.extracting[socketId][username];
+				}
+			},
 		},
 		isBroadcasting: {
 			params: {
@@ -94,6 +149,26 @@ module.exports = {
 				return count;
 			}
 		},
+		isExtractingAccountActivity: {
+			params: {
+				username: 'string'
+			},
+			visibility: 'published',
+			async handler(ctx) {
+				const { username } = ctx.params;
+
+				let count = 0;
+
+				Object.values(this.extracting).forEach(obj =>
+					Object.entries(obj).forEach(([u, c]) => {
+						if (u === username) {
+							count += c;
+						}
+					}));
+
+				return count;
+			}
+		},
 		sendMessage: {
 			params: {
 				broadcaster: 'string',
@@ -103,17 +178,15 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster, message } = ctx.params;
 
-				Object.entries(this.online).forEach(([socketId, broadcasters]) => {
-					if (broadcaster in broadcasters) {
-						ctx.call('gateway.ext.broadcast', {
-							subject: 'send-message',
-							data: {
-								broadcaster,
-								message
-							}
-						});
-					}
-				});
+				await Promise.all(Object.entries(this.online).map(([socketId, broadcasters]) =>
+					(broadcaster in broadcasters) && ctx.call('gateway.ext.broadcast', {
+						subject: 'send-message',
+						data: {
+							broadcaster,
+							message
+						}
+					})
+				));
 			}
 		},
 		ensureExists: {

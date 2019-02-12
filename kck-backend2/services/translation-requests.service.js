@@ -39,7 +39,7 @@ module.exports = {
 
 				this.logger.debug(`translaton request from ${broadcaster}: ${content}`);
 
-				ctx.call('gateway.app.broadcast', {
+				await ctx.call('gateway.app.broadcast', {
 					subject: 'request-translation',
 					data: { broadcaster, tabId, msgId, content }
 				});
@@ -64,7 +64,7 @@ module.exports = {
 
 				this.logger.debug(`cancel translation request`);
 
-				ctx.call('gateway.app.broadcast', {
+				await ctx.call('gateway.app.broadcast', {
 					subject: 'request-cancel-translation',
 					data: { tabId, msgId }
 				});
@@ -84,7 +84,7 @@ module.exports = {
 
 				this.logger.debug(`translation request resolved: ${content}`);
 
-				ctx.call('gateway.ext.broadcast', {
+				await ctx.call('gateway.ext.broadcast', {
 					subject: 'translation',
 					data: { tabId, msgId, content }
 				});

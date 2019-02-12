@@ -45,7 +45,7 @@ module.exports = {
 	          [`tipInfo.${broadcaster}`]: { $exists: true }
 					}
         });
-console.log(result);
+
         result.rows.forEach(tipper => {
           tipper.amount = tipper.tipInfo[broadcaster];
           delete tipper.tipInfo;

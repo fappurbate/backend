@@ -13,20 +13,21 @@ module.exports = {
       async handler(ctx) {
         const { info, type, timestamp, data } = ctx.params;
 
-        ctx.call('gateway.app.broadcast', {
+        await ctx.call('gateway.app.broadcast', {
           subject: 'message',
           data: ctx.params
         });
 
+        ctx.emit('broadcast.message', { info, type, timestamp, data });
+
         const isBroadcasting = await ctx.call('broadcasters.isBroadcasting', {
           broadcaster: info.chat.owner
         });
-        if (!isBroadcasting) { return; }
 
-        if (type === 'tip') {
+        if (type === 'tip' && isBroadcasting) {
           const { username, amount } = data;
 
-          ctx.call('tippers.addTip', {
+          await ctx.call('tippers.addTip', {
             username,
             broadcaster: info.chat.owner,
             amount

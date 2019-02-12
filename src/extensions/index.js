@@ -58,8 +58,6 @@ async function install(packageStream) {
     await db.extensions.delete({ _id: extension._id });
     throw new CustomError(`Failed to install extension ${extension._id}.`, { error }, 'ERR_INSTALL_EXTENSION');
     console.error(`Couldn't not move extension from ${extensionPath} to ${newExtensionPath}.`);
-    await db.extensions.delete({ _id: extension._id });
-    throw new CustomError(`Failed to install extension ${extension._id}.`, { error }, 'ERR_INSTALL_EXTENSION');
   }
 
   wssApp.broadcast('extension-install', { extension: { ...extension, running: false } });

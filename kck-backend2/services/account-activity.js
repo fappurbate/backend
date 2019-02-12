@@ -11,12 +11,14 @@ module.exports = {
         data: 'object'
       },
       async handler(ctx) {
-        const { info, type, timestamp, data } = ctx.params;
+        const { username, type, timestamp, data } = ctx.params;
 
-        ctx.call('gateway.app.broadcast', {
+        await ctx.call('gateway.app.broadcast', {
           subject: 'account-activity',
           data: ctx.params
         });
+
+        ctx.emit('chaturbate.accountActivity', { username, type, timestamp, data });
       }
     }
   }
