@@ -300,7 +300,6 @@ module.exports = {
 				const { broadcaster } = ctx.params;
 
 				const extensions = await this.adapter.find({ sort: ['-createdAt'] });
-				console.log(extensions);
 
 				const vms = this.getBroadcasterVMs(broadcaster);
 				extensions.forEach(extension => {
