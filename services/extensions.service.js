@@ -26,7 +26,11 @@ module.exports = {
   created() {
     this.vmsByBroadcaster = {};
 		this.apiEventHandlers = new EventEmitter;
-		this.apiRequestHandlers = new RequestTarget;
+		this.apiRequestHandlers = new RequestTarget({
+			byRequest: {
+				message: { getAllResults: true }
+			}
+		});
   },
   methods: {
     getBroadcasterVMs(broadcaster) {
@@ -121,7 +125,22 @@ module.exports = {
         ctx.emit('broadcast.message', { info, type, timestamp, data });
 
 				if (info.chat.active && info.broadcast.active) {
-					return this.apiRequestHandlers.request('message', { info, type, timestamp, data });
+					const resultsByVM = await this.apiRequestHandlers.request('message', { info, type, timestamp, data });
+
+					const options = {
+						hidden: false
+					};
+					resultsByVM.forEach(resultsByExt =>
+						resultsByExt.forEach((result = {}) => {
+							if (result.hidden === true) {
+								options.hidden = true;
+							}
+						})
+					);
+
+					return {
+						...options.hidden && { hidden: true }
+					};
 				} else {
 					return undefined;
 				}

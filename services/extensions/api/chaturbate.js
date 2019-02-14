@@ -7,7 +7,11 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
     callAction, emitEvent, events, requests } = data;
 
   const eventHandlers = new EventEmitter;
-  const requestHandlers = new RequestTarget;
+  const requestHandlers = new RequestTarget({
+    byRequest: {
+      message: { getAllResults: true }
+    }
+  });
   const meta = { events, requests };
 
   requests.on('message', meta.messageHandler = payload => {
