@@ -21,7 +21,7 @@ global.fb = {
         api.runtime.onStop.addHandler.applyIgnored(undefined, [new ivm.Reference(callback => {
           const result = handler();
 
-          if (typeof result.then === 'function') {
+          if (typeof result === 'object' && typeof result.then === 'function') {
             result.finally(() => {
               callback.applyIgnored();
             });
@@ -66,8 +66,21 @@ global.fb = {
   },
   cb: {
     onMessage: {
-      addListener: callback => {
-        api.cb.onMessage.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
+      addHandler: handler => {
+        api.cb.onMessage.addHandler.applySync(undefined, [
+          new ivm.Reference((type, timestamp, data, callback) => {
+            const result = handler(type, timestamp, data);
+
+            if (typeof result === 'object' && typeof result.then === 'function') {
+              result.then(
+                result => callback.applySync(undefined, [new ivm.ExternalCopy(result).copyInto()]),
+                error => callback.applySync()
+              );
+            } else {
+              callback.applySync(undefined, [new ivm.ExternalCopy(result).copyInto()]);
+            }
+          })
+        ]);
         return global.fb.cb.onMessage;
       }
     },

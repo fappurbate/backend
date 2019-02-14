@@ -1,18 +1,20 @@
 const { EventEmitter } = require('events');
 const ivm = require('isolated-vm');
+const RequestTarget = require('@kothique/request-target');
 
 module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   const { id, name, version, broadcaster, logger, logError,
-    callAction, emitEvent, events } = data;
+    callAction, emitEvent, events, requests } = data;
 
   const eventHandlers = new EventEmitter;
-  const meta = { events };
+  const requestHandlers = new RequestTarget;
+  const meta = { events, requests };
 
-  events.on('message', meta.messageListener = payload => {
+  requests.on('message', meta.messageHandler = payload => {
     const { type, info, timestamp, data } = payload;
 
     if (info.chat.owner === broadcaster) {
-      eventHandlers.emit('message', type, new Date(timestamp), data);
+      return requestHandlers.request('message', type, new Date(timestamp), data);
     }
   });
 
@@ -50,15 +52,21 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 
   const api = {
     onMessage: {
-      addListener: new ivm.Reference(cbRef => {
-        eventHandlers.on('message', (type, timestamp, data) => cbRef.apply(
-          undefined,
-          [
-            type,
-            new ivm.ExternalCopy(timestamp).copyInto(),
-            new ivm.ExternalCopy(data).copyInto()
-          ]
-        ).catch(logError));
+      addHandler: new ivm.Reference(handlerRef => {
+        requestHandlers.on('message', (type, timestamp, data) => new Promise(resolve =>
+          handlerRef.apply(
+            undefined,
+            [
+              type,
+              new ivm.ExternalCopy(timestamp).copyInto(),
+              new ivm.ExternalCopy(data).copyInto(),
+              new ivm.Reference(resolve)
+            ]
+          ).catch(error => {
+            logError(error);
+            resolve({});
+          })
+        ));
       })
     },
     onAccountActivity: {
@@ -102,12 +110,12 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
 };
 
 module.exports.disposeChaturbateAPI = function disposeChaturbateAPI(meta) {
-  const { events } = meta;
+  const { events, requests } = meta;
 
   events.off('extract-account-activity-stop', meta.extractAccountActivityStopListener);
   events.off('extract-account-activity-start', meta.extractAccountActivityStartListener);
   events.off('broadcast-stop', meta.broadcastStopListener);
   events.off('broadcast-start', meta.broadcastStartListener);
   events.off('account-activity', meta.accountActivityListener);
-  events.off('message', meta.messageListener);
+  requests.off('message', meta.messageHandler);
 };

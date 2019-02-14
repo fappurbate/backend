@@ -2,37 +2,29 @@
 
 module.exports = {
   name: 'messages',
-  actions: {
-    handle: {
-      params: {
-        info: 'object',
-        type: 'string',
-        timestamp: 'string',
-        data: 'object'
-      },
-      async handler(ctx) {
-        const { info, type, timestamp, data } = ctx.params;
+  events: {
+    async 'broadcast.message'(payload) {
+      const { info, type, timestamp, data } = payload;
 
-        await ctx.call('gateway.app.broadcast', {
-          subject: 'message',
-          data: ctx.params
+      await this.broker.call('gateway.app.broadcast', {
+        subject: 'message',
+        data: payload
+      });
+
+      if (!info.chat.active || !info.broadcast.active) { return; }
+
+      const isBroadcasting = await this.broker.call('broadcasters.isBroadcasting', {
+        broadcaster: info.chat.owner
+      });
+
+      if (type === 'tip' && isBroadcasting) {
+        const { username, amount } = data;
+
+        await this.broker.call('tippers.addTip', {
+          username,
+          broadcaster: info.chat.owner,
+          amount
         });
-
-        ctx.emit('broadcast.message', { info, type, timestamp, data });
-
-        const isBroadcasting = await ctx.call('broadcasters.isBroadcasting', {
-          broadcaster: info.chat.owner
-        });
-
-        if (type === 'tip' && isBroadcasting) {
-          const { username, amount } = data;
-
-          await ctx.call('tippers.addTip', {
-            username,
-            broadcaster: info.chat.owner,
-            amount
-          });
-        }
       }
     }
   }

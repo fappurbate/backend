@@ -85,7 +85,6 @@ class VM extends EventEmitter {
       await mainModule.evaluate();
     } catch (error) {
       this.emit('error', error);
-      this.logger.log('error', this._getLocalStack(error.stack));
       this.logError(error);
     }
 
@@ -93,20 +92,35 @@ class VM extends EventEmitter {
   }
 
   logError(error) {
-    this.logger.log('error', this._getLocalStack(error.stack));
+    const { internal, stack } = this._getLocalStack(error.stack)
+
+    if (internal) {
+      console.error(stack);
+      this.logger.log('error', 'Internal Framework Error');
+    } else {
+      this.logger.log('error', stack);
+    }
   }
 
   _getLocalStack(globalStack) {
     const index = globalStack.indexOf('\n    at (<isolated-vm boundary>)');
+    const internal = index === -1;
+
+    if (internal) {
+      return { internal, stack: globalStack };
+    };
+
+    console.log()
+
     globalStack = globalStack.substr(0, index);
-    globalStack = globalStack.replace(/\n    at/, '\nat');
+    globalStack = globalStack.replace(/\n    at/g, '\nat');
 
     const localStack = globalStack.replace(
-      new RegExp(`(\n.*?)/.*?/extensions/${this.extension._id}(/.*)(\n|$)`),
+      new RegExp(`(\n.*?)extensions/${this.extension._id}(/.*)(\n|$)`),
       (match, p1, p2, p3) => p1 + p2 + p3
     );
 
-    return localStack;
+    return { internal, stack: localStack };
   }
 
   async dispose() {

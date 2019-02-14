@@ -34,13 +34,6 @@ module.exports = {
     }
   },
 	events: {
-		'broadcast.message'(payload) {
-			const { info, type, timestamp, data } = payload;
-
-			if (info.broadcast.active && info.chat.active) {
-				this.apiEventHandlers.emit('message', { info, type, timestamp, data });
-			}
-		},
 		'chaturbate.accountActivity'(payload) {
 			const { username, type, timestamp, data } = payload;
 			this.apiEventHandlers.emit('account-activity', { username, type, timestamp, data });
@@ -111,6 +104,27 @@ module.exports = {
 				return this.apiRequestHandlers.request('request', {
 					id, broadcaster, sender, subject, data
 				});
+			}
+		},
+		handleMessage: {
+			params: {
+				info: 'object',
+				type: 'string',
+				timestamp: 'string',
+				data: 'any'
+			},
+			visibility: 'published',
+			async handler(ctx) {
+				const { info, type, data } = ctx.params;
+				const timestamp = new Date(ctx.params.timestamp);
+
+        ctx.emit('broadcast.message', { info, type, timestamp, data });
+
+				if (info.chat.active && info.broadcast.active) {
+					return this.apiRequestHandlers.request('message', { info, type, timestamp, data });
+				} else {
+					return undefined;
+				}
 			}
 		},
     install: {
@@ -232,8 +246,8 @@ module.exports = {
 					extension,
 					broadcaster,
 					extensionsPath: this.settings.path,
-					callAction: ctx.call.bind(ctx),
-					emitEvent: ctx.emit.bind(ctx),
+					callAction: this.broker.call.bind(this.broker),
+					emitEvent: this.broker.emit.bind(this.broker),
 					apiEventHandlers: this.apiEventHandlers,
 					apiRequestHandlers: this.apiRequestHandlers
 				});

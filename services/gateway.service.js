@@ -49,7 +49,6 @@ module.exports = {
 							aliases: {
 								'request-translation':        'translationRequests.request',
 								'request-cancel-translation': 'translationRequests.cancel',
-								'message':                    'messages.handle',
 								'account-activity':           'accountActivity.handle',
 								'broadcast-start':            'broadcasters.onBroadcastStart',
 								'broadcast-stop':             'broadcasters.onBroadcastStop'
@@ -63,7 +62,8 @@ module.exports = {
 							aliases: {
 								'tipper':                         'tippers.oneForBroadcaster',
 								'is-broadcasting':                'broadcasters.isBroadcasting',
-								'is-extracting-account-activity': 'broadcasters.isExtractingAccountActivity'
+								'is-extracting-account-activity': 'broadcasters.isExtractingAccountActivity',
+								'message':                        'extensions.handleMessage'
 							},
 							onBeforeCall: function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;

@@ -44,9 +44,9 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
       })
     },
     onStop: {
-      addHandler: new ivm.Reference(handler => {
+      addHandler: new ivm.Reference(handlerRef => {
         requestHandlers.on('stop', () => new Promise(resolve =>
-          handler.apply(undefined, [new ivm.Reference(resolve)]).catch(logError)
+          handlerRef.apply(undefined, [new ivm.Reference(resolve)]).catch(logError)
         ))
       })
     },
