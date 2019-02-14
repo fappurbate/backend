@@ -11,7 +11,7 @@ module.exports = {
         data: payload
       });
 
-      if (!info.chat.active || !info.broadcast.active) { return; }
+      if (!info.chat.active || !info.chat.ready || !info.broadcast.active) { return; }
 
       const isBroadcasting = await this.broker.call('broadcasters.isBroadcasting', {
         broadcaster: info.chat.owner

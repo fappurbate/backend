@@ -23,7 +23,7 @@ class VM extends EventEmitter {
     this.apiRequestHandlers = apiRequestHandlers;
 
     this.logger = createLogger({
-      extensionId: extension._id,
+      extensionId: extension._id.toString(),
       extensionsPath,
       broadcaster,
       async onLogged(info) {
@@ -35,7 +35,7 @@ class VM extends EventEmitter {
     });
 
     this.clean = true;
-    this.path = path.join(extensionsPath, this.extension._id);
+    this.path = path.join(extensionsPath, this.extension._id.toString());
   }
 
   async start() {
@@ -48,7 +48,7 @@ class VM extends EventEmitter {
     this.context = await this.isolate.createContext();
 
     const { api, meta: apiMeta } = createAPI({
-      id: this.extension._id,
+      id: this.extension._id.toString(),
       name: this.extension.name,
       version: this.extension.version || null,
       broadcaster: this.broadcaster,
@@ -116,7 +116,7 @@ class VM extends EventEmitter {
     globalStack = globalStack.replace(/\n    at/g, '\nat');
 
     const localStack = globalStack.replace(
-      new RegExp(`(\n.*?)extensions/${this.extension._id}(/.*)(\n|$)`),
+      new RegExp(`(\n.*?)extensions/${this.extension._id.toString()}(/.*)(\n|$)`),
       (match, p1, p2, p3) => p1 + p2 + p3
     );
 

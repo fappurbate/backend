@@ -1,15 +1,20 @@
 'use strict';
 
 const DbService = require('moleculer-db');
+const MongoDBAdapter = require('moleculer-db-adapter-mongo');
+
+const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
 
 module.exports = {
 	name: 'broadcasters',
   mixins: [DbService],
+	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
+	collection: 'broadcasters',
 	settings: {
     fields: ['_id', 'username'],
     pageSize: 50,
     maxPageSize: 200,
-    maxLimit: -1
+    maxLimit: -1,
 	},
 	created() {
 		this.online = {};
@@ -197,12 +202,15 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
 
-				await this.adapter.db.update(
+				await this.adapter.collection.findOneAndUpdate(
 					{ username: broadcaster },
 					{ $set: { username: broadcaster } },
 					{ upsert: true }
 				);
 			}
 		}
+	},
+	afterConnected() {
+		this.logger.info('Connected successfully.');
 	}
 };

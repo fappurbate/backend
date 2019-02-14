@@ -1,10 +1,15 @@
 'use strict';
 
 const DbService = require('moleculer-db');
+const MongoDBAdapter = require('moleculer-db-adapter-mongo');
+
+const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
 
 module.exports = {
 	name: 'tippers',
   mixins: [DbService],
+	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
+	collection: 'tippers',
 	settings: {
     fields: ['_id', 'username', 'tipInfo'],
     pageSize: 50,
@@ -26,7 +31,7 @@ module.exports = {
 
 				await ctx.call('broadcasters.ensureExists', { broadcaster });
 
-        await this.adapter.db.update({ username }, {
+        await this.adapter.collection.findOneAndUpdate({ username }, {
           $inc: { [`tipInfo.${broadcaster}`]: amount }
         }, { upsert: true });
       }

@@ -1,10 +1,15 @@
 'use strict';
 
 const DbService = require('moleculer-db');
+const MongoDBAdapter = require('moleculer-db-adapter-mongo');
+
+const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
 
 module.exports = {
 	name: 'translationRequests',
   mixins: [DbService],
+	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
+	collection: 'translationRequests',
 	settings: {
     fields: ['_id', 'broadcaster', 'tabId', 'msgId', 'content', 'createdAt'],
     pageSize: 50,
@@ -44,7 +49,7 @@ module.exports = {
 					data: { broadcaster, tabId, msgId, content }
 				});
 
-				await this.adapter.db.insert({
+				await this.adapter.collection.insertOne({
 					broadcaster,
 					tabId,
 					msgId,
@@ -69,7 +74,7 @@ module.exports = {
 					data: { tabId, msgId }
 				});
 
-				await this.adapter.db.remove({ tabId, msgId }, { multi: true });
+				await this.adapter.collection.deleteMany({ tabId, msgId });
 			}
 		},
 		resolve: {
@@ -89,7 +94,7 @@ module.exports = {
 					data: { tabId, msgId, content }
 				});
 
-				await this.adapter.db.remove({ tabId, msgId }, { multi: true });
+				await this.adapter.collection.deleteMany({ tabId, msgId });
 			}
 		}
   }
