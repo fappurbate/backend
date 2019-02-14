@@ -4,7 +4,7 @@ delete _ivm;
 const api = _api;
 delete _api;
 
-global.kck = {
+global.fb = {
   runtime: {
     id: api.runtime.id,
     name: api.runtime.name,
@@ -13,7 +13,7 @@ global.kck = {
     onStart: {
       addListener: callback => {
         api.runtime.onStart.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.kck.runtime.onStart;
+        return global.fb.runtime.onStart;
       }
     },
     onStop: {
@@ -29,13 +29,13 @@ global.kck = {
             callback.applyIgnored();
           }
         })]);
-        return global.kck.runtime.onStop;
+        return global.fb.runtime.onStop;
       }
     },
     onEvent: {
       addListener: (subject, callback) => {
         api.runtime.onEvent.addListener.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
-        return global.kck.runtime.onEvent;
+        return global.fb.runtime.onEvent;
       }
     },
     emitEvent: (receivers, subject, data = null) => {
@@ -51,7 +51,7 @@ global.kck = {
     onRequest: {
       addHandler: (subject, callback) => {
         api.runtime.onRequest.addHandler.applyIgnored(undefined, [subject, new ivm.Reference(callback)]);
-        return global.kck.runtime.onRequest;
+        return global.fb.runtime.onRequest;
       }
     }
   },
@@ -68,25 +68,25 @@ global.kck = {
     onMessage: {
       addListener: callback => {
         api.cb.onMessage.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.kck.cb.onMessage;
+        return global.fb.cb.onMessage;
       }
     },
     onAccountActivity: {
       addListener: callback => {
         api.cb.onAccountActivity.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.kck.cb.onAccountActivity;
+        return global.fb.cb.onAccountActivity;
       }
     },
     onBroadcastStart: {
       addListener: callback => {
         api.cb.onBroadcastStart.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.kck.cb.onBroadcastStart;
+        return global.fb.cb.onBroadcastStart;
       }
     },
     onBroadcastStop: {
       addListener: callback => {
         api.cb.onBroadcastStop.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.kck.cb.onBroadcastStop;
+        return global.fb.cb.onBroadcastStop;
       }
     },
     get isBroadcasting() {

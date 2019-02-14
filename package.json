@@ -1,7 +1,7 @@
 {
-  "name": "kck-backend",
-  "version": "0.0.1",
-  "description": "KCK Backend",
+  "name": "fappurbate-backend",
+  "version": "0.1.0",
+  "description": "Fappurbate Backend",
   "scripts": {
     "dev": "moleculer-runner --repl --hot services",
     "start": "moleculer-runner",
@@ -16,19 +16,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kothique/chaturbate-backend.git"
+    "url": "git+https://github.com/fappurbate/backend.git"
   },
   "keywords": [
     "chaturbate",
     "webcam",
-    "kck"
+    "fappurbate"
   ],
   "author": "Kothique Felixx <kothiue@protonmail.ch>",
   "license": "WTFPL",
   "bugs": {
-    "url": "https://github.com/kothique/chaturbate-backend/issues"
+    "url": "https://github.com/fappurbate/backend/issues"
   },
-  "homepage": "https://github.com/kothique/chaturbate-backend#readme",
+  "homepage": "https://github.com/fappurbate/backend#readme",
   "devDependencies": {
     "@babel/core": "^7.2.2",
     "@babel/preset-env": "^7.3.1",

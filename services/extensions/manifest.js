@@ -9,7 +9,7 @@ const validate = ajv.compile({
   $schema: 'http://json-schema.org/draft-07/schema#',
   $id: 'http://example.com/product.schema.json',
   title: 'Manifest',
-  description: 'KCK Extension Manifest File',
+  description: 'Fappurbate Extension Manifest File',
   type: 'object',
   additionalProperties: false,
   properties: {

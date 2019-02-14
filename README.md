@@ -1,4 +1,4 @@
-# KCK Backend
+# Fappurbate Backend
 
 ## NPM scripts
 
