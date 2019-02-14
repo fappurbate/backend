@@ -54,6 +54,8 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
 
+				await ctx.call('broadcasters.ensureExists', { broadcaster });
+
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'broadcast-start',
 					data: { broadcaster }
