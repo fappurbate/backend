@@ -280,7 +280,10 @@ module.exports = {
 
 				vm.on('error', async error => {
 					this.logger.debug(`VM encountered an error:`, error);
-					await ctx.call('extensions.stop', { extensionId, broadcaste });
+					await ctx.call('extensions.stop', {
+						extensionId: extensionId.toString(),
+						broadcaster
+					});
 				});
 
 				this.logger.info(`Starting extension ${extension.name} (${extension._id.toString()})..`);
@@ -339,10 +342,13 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
 
-				const extensions = await this.adapter.collection.find().sort({ createdAt: -1 }).toArray();
+				const extensions = await ctx.call('extensions.list', {
+					...ctx.params,
+					sort: '-createdAt'
+				});
 
 				const vms = this.getBroadcasterVMs(broadcaster);
-				extensions.forEach(extension => {
+				extensions.rows.forEach(extension => {
 					extension.running = extension._id.toString() in vms;
 				});
 

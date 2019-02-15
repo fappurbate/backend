@@ -2,6 +2,7 @@ import '@babel/polyfill';
 
 import runtime from './runtime';
 import cb from './chaturbate';
+import FappurbateError from './error';
 
 const nodes = {
   id: document.querySelector('meta[data-name="id"]'),
@@ -27,14 +28,14 @@ Object.values(nodes).forEach(node => node && node.remove());
 
 window.fb = {
   runtime: runtime(data),
-  cb: cb(data)
+  cb: cb(data),
+  Error: FappurbateError
 };
 
 const oldAddEventListener = window.addEventListener;
 window.addEventListener = function addEventListener(type, ...rest) {
   if (type === 'message') {
-    console.error(`Don't listen to 'message', better use Fappurbate API ^_^ This is for security reasons.`);
-    return;
+    throw new FappurbateError(`Don't listen to 'message', better use Fappurbate API ^_^.`);
   }
 
   return oldAddEventListener.apply(window, rest);
@@ -42,11 +43,11 @@ window.addEventListener = function addEventListener(type, ...rest) {
 
 const oldOnMessage = window.onmessage;
 Object.defineProperty(window, 'onmessage', {
-  set: () => console.error(`Please don't set 'onmessage', Fappurbate API is better (I hope)! If it's not, create an issue on GitHub ^-^`),
+  set: () => { throw new FappurbateError(`Please don't set 'onmessage', Fappurbate API is better (I hope)! If it's not, create an issue on GitHub ^-^`) },
   get: () => oldOnMessage
 });
 
 const oldParent = window.parent;
 Object.defineProperty(window, 'parent', {
-  get: () => console.error(`There's no parent anymore.`)
+  get: () => { throw new FappurbateError(`There's no parent anymore.`) }
 });

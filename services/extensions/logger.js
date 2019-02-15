@@ -15,7 +15,7 @@ module.exports.createLogger = function createVMLogger(options) {
   const { extensionId, extensionsPath, broadcaster, onLogged = null } = options;
 
   const transports = new WinstonNeDB({
-    filename: path.join(extensionsPath, extensionId, 'logs', `${broadcaster}.nedb`)
+    filename: path.join(extensionsPath, extensionId.toString(), 'logs', `${broadcaster}.nedb`)
   });
 
   transports.on('logged', info => onLogged && setImmediate(() => onLogged(info)));
