@@ -37,31 +37,92 @@ module.exports = {
 				message: { getAllResults: true }
 			}
 		});
+
+		this.online = {};
+		this.extracting = {};
   },
   methods: {
     getBroadcasterVMs(broadcaster) {
       return this.vmsByBroadcaster[broadcaster] || (this.vmsByBroadcaster[broadcaster] = {});
-    }
+    },
+		isBroadcasting(broadcaster) {
+			let count = 0;
+
+			Object.values(this.online).forEach(obj =>
+				Object.entries(obj).forEach(([b, c]) => {
+					if (b === broadcaster) {
+						count += c;
+					}
+				}));
+
+			return count;
+		},
+		isExtractingAccountActivity(username) {
+			let count = 0;
+
+			Object.values(this.extracting).forEach(obj =>
+				Object.entries(obj).forEach(([u, c]) => {
+					if (u === username) {
+						count += c;
+					}
+				}));
+
+			return count;
+		}
   },
 	events: {
 		'chaturbate.accountActivity'(payload) {
 			const { username, type, timestamp, data } = payload;
 			this.apiEventHandlers.emit('account-activity', { username, type, timestamp, data });
 		},
+		'socket.ext.connect'({ socket }) {
+			this.online[socket.id] = {};
+			this.extracting[socket.id] = {};
+		},
+		'socket.ext.disconnect'({ socket }) {
+			delete this.online[socket.id];
+			delete this.extracting[socket.id];
+		},
 		'broadcast.start'(payload) {
-			const { broadcaster } = payload;
+			const { broadcaster, socketId } = payload;
+
+			if (broadcaster in this.online[socketId]) {
+				this.online[socketId][broadcaster]++;
+			} else {
+				this.online[socketId][broadcaster] = 1;
+			}
+
 			this.apiEventHandlers.emit('broadcast-start', { broadcaster });
 		},
 		'broadcast.stop'(payload) {
-			const { broadcaster } = payload;
+			const { broadcaster, socketId } = payload;
+
+			if (this.online[socketId][broadcaster] &&
+					--this.online[socketId][broadcaster] === 0) {
+				delete this.online[socketId][broadcaster];
+			}
+
 			this.apiEventHandlers.emit('broadcast-stop', { broadcaster });
 		},
 		'extract-account-activity.start'(payload) {
-			const { username } = payload;
+			const { username, socketId } = payload;
+
+			if (username in this.extracting[socketId]) {
+				this.extracting[socketId][username]++;
+			} else {
+				this.extracting[socketId][username] = 1;
+			}
+
 			this.apiEventHandlers.emit('extract-account-activity-start', { username });
 		},
 		'extract-account-activity.stop'(payload) {
-			const { username } = payload;
+			const { username, socketId } = payload;
+
+			if (this.extracting[socketId][username] &&
+					--this.extracting[socketId][username] === 0) {
+				delete this.extracting[socketId][username];
+			}
+
 			this.apiEventHandlers.emit('extract-account-activity-stop', { username });
 		}
 	},
@@ -275,7 +336,9 @@ module.exports = {
 					callAction: this.broker.call.bind(this.broker),
 					emitEvent: this.broker.emit.bind(this.broker),
 					apiEventHandlers: this.apiEventHandlers,
-					apiRequestHandlers: this.apiRequestHandlers
+					apiRequestHandlers: this.apiRequestHandlers,
+					isBroadcasting: broadcaster => this.isBroadcasting(broadcaster),
+					isExtractingAccountActivity: username => this.isExtractingAccountActivity(username)
 				});
 
 				vm.on('error', async error => {
@@ -395,6 +458,7 @@ module.exports = {
 
 				const logger = vmInfo ? vmInfo.vm.logger : createLogger({
 					extensionId,
+					extensionsPath: this.settings.path,
 					broadcaster
 				});
 				const { nedb: logs } = await new Promise((resolve, reject) =>
@@ -424,7 +488,7 @@ module.exports = {
 
 				if (!vmInfo) {
 					const notRunningPage = await fs.readFile(
-						path.join(__dirname, 'pages', 'not-running.html'),
+						path.join(__dirname, 'extensions', 'pages', 'not-running.html'),
 						{ encoding: 'utf8' }
 					);
 					return notRunningPage;

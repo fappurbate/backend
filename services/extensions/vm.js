@@ -13,7 +13,8 @@ class VM extends EventEmitter {
     super();
 
     const { extension, broadcaster, extensionsPath,
-      callAction, emitEvent, apiEventHandlers, apiRequestHandlers } = options;
+      callAction, emitEvent, apiEventHandlers, apiRequestHandlers,
+      isBroadcasting, isExtractingAccountActivity } = options;
 
     this.extension = extension;
     this.broadcaster = broadcaster;
@@ -21,6 +22,8 @@ class VM extends EventEmitter {
     this.emitEvent = emitEvent;
     this.apiEventHandlers = apiEventHandlers;
     this.apiRequestHandlers = apiRequestHandlers;
+    this.isBroadcasting = isBroadcasting;
+    this.isExtractingAccountActivity = isExtractingAccountActivity;
 
     this.logger = createLogger({
       extensionId: extension._id.toString(),
@@ -57,7 +60,9 @@ class VM extends EventEmitter {
       callAction: this.callAction,
       emitEvent: this.emitEvent,
       events: this.apiEventHandlers,
-      requests: this.apiRequestHandlers
+      requests: this.apiRequestHandlers,
+      isBroadcasting: this.isBroadcasting,
+      isExtractingAccountActivity: this.isExtractingAccountActivity
     });
     this.apiMeta = apiMeta;
 

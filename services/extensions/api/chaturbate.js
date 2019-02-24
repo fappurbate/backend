@@ -4,7 +4,8 @@ const RequestTarget = require('@kothique/request-target');
 
 module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
   const { id, name, version, broadcaster, logger, logError,
-    callAction, emitEvent, events, requests } = data;
+    callAction, emitEvent, events, requests,
+    isBroadcasting, isExtractingAccountActivity } = data;
 
   const eventHandlers = new EventEmitter;
   const requestHandlers = new RequestTarget({
@@ -85,7 +86,7 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
         ).catch(logError));
       })
     },
-    isBroadcasting: new ivm.Reference(() => Broadcast.isBroadcasting(broadcaster)),
+    isBroadcasting: new ivm.Reference(() => isBroadcasting(broadcaster)),
     onBroadcastStart: {
       addListener: new ivm.Reference(cbRef => {
         eventHandlers.on('broadcast-start', () => cbRef.apply(undefined, []).catch(logError));
@@ -106,8 +107,8 @@ module.exports.createChaturbateAPI = function createChaturbateAPI(data) {
         eventHandlers.on('extract-account-activity-stop', () => cbRef.apply(undefined, []).catch(logError));
       })
     },
-    isExtractingAccountActivity: new ivm.Reference(() => ExtractAccountActivity.isExtracting(broadcaster)),
-    sendMessage: new ivm.Reference(message => Broadcast.sendMessage(broadcaster, message))
+    isExtractingAccountActivity: new ivm.Reference(() => isExtractingAccountActivity(broadcaster)),
+    sendMessage: new ivm.Reference(message => callAction('broadcasters.sendMessage', { broadcaster, message }))
   };
 
   return { api, meta };

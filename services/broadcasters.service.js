@@ -53,6 +53,7 @@ module.exports = {
 			visibility: 'published',
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
+				const socketId = ctx.meta.socket.id;
 
 				await ctx.call('broadcasters.ensureExists', { broadcaster });
 
@@ -60,9 +61,8 @@ module.exports = {
 					subject: 'broadcast-start',
 					data: { broadcaster }
 				});
-				ctx.emit('broadcast.start', { broadcaster });
+				ctx.emit('broadcast.start', { broadcaster, socketId });
 
-				const socketId = ctx.meta.socket.id;
 				if (broadcaster in this.online[socketId]) {
 					this.online[socketId][broadcaster]++;
 				} else {
@@ -77,17 +77,16 @@ module.exports = {
 			visibility: 'published',
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
+				const socketId = ctx.meta.socket.id;
 
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'broadcast-stop',
 					data: { broadcaster }
 				});
-				ctx.emit('broadcast.stop', { broadcaster });
+				ctx.emit('broadcast.stop', { broadcaster, socketId });
 
-				const socketId = ctx.meta.socket.id;
-				if (!this.online[socketId][broadcaster]) { return; }
-
-				if (--this.online[socketId][broadcaster] === 0) {
+				if (this.online[socketId][broadcaster] &&
+						--this.online[socketId][broadcaster] === 0) {
 					delete this.online[socketId][broadcaster];
 				}
 			},
@@ -99,14 +98,14 @@ module.exports = {
 			visibility: 'published',
 			async handler(ctx) {
 				const { username } = ctx.params;
+				const socketId = ctx.meta.socket.id;
 
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'extract-account-activity-start',
 					data: { username }
 				});
-				ctx.emit('extract-account-activity.start', { username });
+				ctx.emit('extract-account-activity.start', { username, socketId });
 
-				const socketId = ctx.meta.socket.id;
 				if (username in this.extracting[socketId]) {
 					this.extracting[socketId][username]++;
 				} else {
@@ -121,17 +120,16 @@ module.exports = {
 			visibility: 'published',
 			async handler(ctx) {
 				const { username } = ctx.params;
+				const socketId = ctx.meta.socket.id;
 
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'extract-account-activity-stop',
 					data: { username }
 				});
-				ctx.emit('extract-account-activity.stop', { username });
+				ctx.emit('extract-account-activity.stop', { username, socketId });
 
-				const socketId = ctx.meta.socket.id;
-				if (!this.extracting[socketId][username]) { return; }
-
-				if (--this.extracting[socketId][username] === 0) {
+				if (this.extracting[socketId][username] &&
+						--this.extracting[socketId][username] === 0) {
 					delete this.extracting[socketId][username];
 				}
 			},

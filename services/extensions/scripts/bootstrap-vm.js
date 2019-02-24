@@ -5,6 +5,16 @@ const api = _api;
 delete _api;
 
 global.fb = {
+  Error: class FappurbateError extends Error {
+    constructor(message, type, data) {
+      super(message);
+      Error.captureStackTrace(this, FappurbateError);
+
+      this.name = 'FappurbateError';
+      this.type = type;
+      this.data = data;
+    }
+  },
   runtime: {
     id: api.runtime.id,
     name: api.runtime.name,
