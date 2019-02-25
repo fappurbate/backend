@@ -11,16 +11,22 @@ module.exports = {
 	settings: {
 		port: process.env.PORT || 3000,
 
+		use: [
+			async (req, res, next) => {
+				try {
+					const { files, fields } = await asyncBusboy(req);
+					Object.assign(req.body, fields);
+					files.forEach(file => req.body[file.fieldname] = file);
+				} catch (error) {
+					// ignore
+				} finally {
+					next();
+				}
+			}
+		],
+
 		routes: [{
 			path: '/api',
-			async onBeforeCall(ctx, route, req, res) {
-				try {
-					const { files } = await asyncBusboy(req);
-					ctx.meta.files = files;
-				} catch (error) {
-					// no files were submitted with the request
-				}
-			},
 			mappingPolicy: 'restrict',
 			aliases: {
 				'GET    broadcasters':                                               'broadcasters.list',
@@ -35,7 +41,11 @@ module.exports = {
 				'GET    broadcaster/:broadcaster/extension/:extensionId/logs':       'extensions.getLogs',
 				'GET    broadcaster/:broadcaster/extension/:extensionId/page/:page': 'extensions.getPage',
 				'GET    broadcaster/:broadcaster/extensions/stream':                 'extensions.getStreamInfo',
-				'GET    broadcaster/:broadcaster/extension/:extensionId/stream':     'extensions.getStream'
+				'GET    broadcaster/:broadcaster/extension/:extensionId/stream':     'extensions.getStream',
+				'POST   gallery':                                                    'gallery.addFile',
+				'DELETE gallery/:fileId':                                            'gallery.removeFile',
+				'GET    gallery/audio':                                              'gallery.getAudio',
+				'GET    gallery/:fileId':                                            'gallery.getFile'
 			},
 			whitelist: [/.*/]
 		}],

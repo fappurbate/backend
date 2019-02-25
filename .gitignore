@@ -62,3 +62,4 @@ typings/
 
 /extensions
 /services/extensions/scripts/browser-api/dist
+rethinkdb_data

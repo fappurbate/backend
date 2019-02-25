@@ -52,9 +52,11 @@
     "moleculer": "^0.13.0",
     "moleculer-db": "^0.7.7",
     "moleculer-db-adapter-mongo": "^0.4.2",
+    "moleculer-db-adapter-rethinkdb": "^0.2.9",
     "moleculer-io": "^1.0.2",
     "moleculer-web": "^0.8.0",
     "nats": "^1.0.1",
+    "rethinkdb": "^2.3.3",
     "tar-fs": "^2.0.0",
     "tmp": "0.0.33",
     "winston": "^3.2.1"

@@ -1,5 +1,7 @@
 'use strict';
 
+const ParamsValidator = require('./src/params-validator');
+
 /**
  * Moleculer ServiceBroker configuration file
  *
@@ -115,7 +117,7 @@ module.exports = {
 	// Enable parameters validation. More info: https://moleculer.services/docs/0.13/validating.html
 	validation: true,
 	// Custom Validator class for validation.
-	validator: null,
+	validator: new ParamsValidator,
 
 	// Enable metrics function. More info: https://moleculer.services/docs/0.13/metrics.html
 	metrics: false,

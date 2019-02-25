@@ -9,10 +9,10 @@ const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 const RequestTarget = require('@kothique/request-target');
 const EventEmitter = require('events');
 
-const { createLogger } = require('./extensions/logger');
-const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('./extensions/util');
-const { readManifest } = require('./extensions/manifest');
-const { VM } = require('./extensions/vm');
+const { createLogger } = require('../src/extensions/logger');
+const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('../src/extensions/util');
+const { readManifest } = require('../src/extensions/manifest');
+const { VM } = require('../src/extensions/vm');
 
 const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
 
@@ -215,15 +215,14 @@ module.exports = {
 			}
 		},
     install: {
+			params: {
+				file: 'stream'
+			},
       visibility: 'published',
       async handler(ctx) {
-				const files = ctx.meta.files;
+				const { file } = ctx.params;
 
-				if (!files || files.length !== 1) {
-					throw new MoleculerClientError('Just one file is required.', 400, 'ERR_INVALID_ARGUMENTS');
-				}
-
-				const extensionPath = await extractPackage(files[0]);
+				const extensionPath = await extractPackage(file);
 
         const manifest = await readManifest(extensionPath);
 
