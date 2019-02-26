@@ -81,7 +81,7 @@
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = "./services/extensions/scripts/browser-api/src/index.js");
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/extensions/scripts/browser-api/src/index.js");
 /******/ })
 /************************************************************************/
 /******/ ({
@@ -9731,10 +9731,10 @@ module.exports = g;
 
 /***/ }),
 
-/***/ "./services/extensions/scripts/browser-api/src/chaturbate.js":
-/*!*******************************************************************!*\
-  !*** ./services/extensions/scripts/browser-api/src/chaturbate.js ***!
-  \*******************************************************************/
+/***/ "./src/extensions/scripts/browser-api/src/chaturbate.js":
+/*!**************************************************************!*\
+  !*** ./src/extensions/scripts/browser-api/src/chaturbate.js ***!
+  \**************************************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -9870,10 +9870,10 @@ var requests = {};
 
 /***/ }),
 
-/***/ "./services/extensions/scripts/browser-api/src/error.js":
-/*!**************************************************************!*\
-  !*** ./services/extensions/scripts/browser-api/src/error.js ***!
-  \**************************************************************/
+/***/ "./src/extensions/scripts/browser-api/src/error.js":
+/*!*********************************************************!*\
+  !*** ./src/extensions/scripts/browser-api/src/error.js ***!
+  \*********************************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -9927,10 +9927,10 @@ function (_Error) {
 
 /***/ }),
 
-/***/ "./services/extensions/scripts/browser-api/src/index.js":
-/*!**************************************************************!*\
-  !*** ./services/extensions/scripts/browser-api/src/index.js ***!
-  \**************************************************************/
+/***/ "./src/extensions/scripts/browser-api/src/index.js":
+/*!*********************************************************!*\
+  !*** ./src/extensions/scripts/browser-api/src/index.js ***!
+  \*********************************************************/
 /*! no exports provided */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -9938,9 +9938,9 @@ function (_Error) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_polyfill__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/polyfill */ "./node_modules/@babel/polyfill/lib/index.js");
 /* harmony import */ var _babel_polyfill__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_polyfill__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./runtime */ "./services/extensions/scripts/browser-api/src/runtime.js");
-/* harmony import */ var _chaturbate__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./chaturbate */ "./services/extensions/scripts/browser-api/src/chaturbate.js");
-/* harmony import */ var _error__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./error */ "./services/extensions/scripts/browser-api/src/error.js");
+/* harmony import */ var _runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./runtime */ "./src/extensions/scripts/browser-api/src/runtime.js");
+/* harmony import */ var _chaturbate__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./chaturbate */ "./src/extensions/scripts/browser-api/src/chaturbate.js");
+/* harmony import */ var _error__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./error */ "./src/extensions/scripts/browser-api/src/error.js");
 
 
 
@@ -10003,10 +10003,10 @@ Object.defineProperty(window, 'parent', {
 
 /***/ }),
 
-/***/ "./services/extensions/scripts/browser-api/src/runtime.js":
-/*!****************************************************************!*\
-  !*** ./services/extensions/scripts/browser-api/src/runtime.js ***!
-  \****************************************************************/
+/***/ "./src/extensions/scripts/browser-api/src/runtime.js":
+/*!***********************************************************!*\
+  !*** ./src/extensions/scripts/browser-api/src/runtime.js ***!
+  \***********************************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 

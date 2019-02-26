@@ -44,6 +44,7 @@ module.exports = {
 				'GET    broadcaster/:broadcaster/extension/:extensionId/stream':     'extensions.getStream',
 				'POST   gallery':                                                    'gallery.addFile',
 				'DELETE gallery/:fileId':                                            'gallery.removeFile',
+				'GET    gallery/images':                                             'gallery.getImages',
 				'GET    gallery/audio':                                              'gallery.getAudio',
 				'GET    gallery/:fileId':                                            'gallery.getFile'
 			},

@@ -57,6 +57,8 @@
     "moleculer-web": "^0.8.0",
     "nats": "^1.0.1",
     "rethinkdb": "^2.3.3",
+    "sharp": "^0.21.3",
+    "stream-meter": "^1.0.4",
     "tar-fs": "^2.0.0",
     "tmp": "0.0.33",
     "winston": "^3.2.1"
