@@ -46,7 +46,9 @@ module.exports = {
 				'DELETE gallery/:fileId':                                            'gallery.removeFile',
 				'GET    gallery/images':                                             'gallery.getImages',
 				'GET    gallery/audio':                                              'gallery.getAudio',
-				'GET    gallery/:fileId':                                            'gallery.getFile'
+				'GET    gallery/:fileId':                                            'gallery.getFile',
+				'GET    gallery/:fileId/thumbnail':                                  'gallery.getThumbnail',
+				'GET    gallery/:fileId/preview':                                    'gallery.getPreview'
 			},
 			whitelist: [/.*/]
 		}],

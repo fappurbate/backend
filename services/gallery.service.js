@@ -32,7 +32,8 @@ module.exports = {
           width: this.settings.thumbnailSizes[size],
           height: this.settings.thumbnailSizes[size],
           fit: 'contain',
-          position: 'center'
+          position: 'center',
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
         })
         .png()
         .toBuffer()
@@ -75,6 +76,7 @@ module.exports = {
         const { generated_keys: [id] } = await this.rTable().insert({
           type,
           filename,
+          mime: ft.mime,
           file: buffer,
           ...type === 'image' && {
             thumbnails: await this.generateThumbnails(buffer)
@@ -144,11 +146,14 @@ module.exports = {
         if (typeof limit !== 'undefined') {
           query = query.limit(limit);
         }
-        query = query.pluck([
-          'id',
-          'filename',
-          ...thumbnails ? [{ thumbnails }] : []
-        ]);
+        query = query
+          .pluck([
+            'id',
+            'filename',
+            'mime',
+            ...thumbnails ? [{ thumbnails }] : []
+          ])
+          .orderBy(r.desc('id'));
 
         const docs = await query.run(this.adapter.client).then(cursor => cursor.toArray());
 
@@ -161,6 +166,39 @@ module.exports = {
         }
 
         return docs;
+      }
+    },
+    getThumbnail: {
+      params: {
+        fileId: 'string',
+        size: { type: 'enum', values: ['small', 'medium', 'large'], optional: true }
+      },
+      visibility: 'published',
+      async handler(ctx) {
+        const { fileId, size = 'small' } = ctx.params;
+
+        const thumbnail = await this.rTable().get(fileId).getField('thumbnails').getField(size).run(this.adapter.client);
+        if (!thumbnail) {
+          throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
+        }
+
+        return thumbnail;
+      }
+    },
+    getPreview: {
+      params: {
+        fileId: 'string'
+      },
+      visibility: 'published',
+      async handler(ctx) {
+        const { fileId } = ctx.params;
+
+        const preview = await this.rTable().get(fileId).getField('preview').run(this.adapter.client);
+        if (!preview) {
+          throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
+        }
+
+        return preview;
       }
     },
     getAudio: {
@@ -180,10 +218,11 @@ module.exports = {
         if (typeof limit !== 'undefined') {
           query = query.limit(limit);
         }
-        query = query.pluck(['id', 'filename']);
+        query = query
+          .pluck(['id', 'filename', 'mime'])
+          .orderBy(r.desc('id'));
 
         const docs = await query.run(this.adapter.client).then(cursor => cursor.toArray());
-
         return docs;
       }
     }

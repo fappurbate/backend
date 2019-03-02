@@ -47,6 +47,7 @@
     "@kothique/winston-nedb": "^1.0.1",
     "ajv": "^6.9.1",
     "async-busboy": "^0.7.0",
+    "file-type": "^10.8.0",
     "fs-extra": "^7.0.1",
     "isolated-vm": "^1.7.9",
     "moleculer": "^0.13.0",

@@ -487,7 +487,7 @@ module.exports = {
 
 				if (!vmInfo) {
 					const notRunningPage = await fs.readFile(
-						path.join(__dirname, 'extensions', 'pages', 'not-running.html'),
+						path.join(__dirname, '..', 'src', 'extensions', 'pages', 'not-running.html'),
 						{ encoding: 'utf8' }
 					);
 					return notRunningPage;
