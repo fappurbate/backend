@@ -17,6 +17,10 @@ module.exports = {
       small: 128,
       medium: 256,
       large: 512
+    },
+    preview: {
+      width: 1024,
+      height: 768
     }
   },
   adapter: new RethinkDBAdapter({ host: '127.0.0.1', port: 28015 }),
@@ -41,6 +45,18 @@ module.exports = {
       ));
 
       return result;
+    },
+    generatePreview(buffer) {
+      return sharp(buffer)
+      .resize({
+        width: this.settings.preview.width,
+        height: this.settings.preview.height,
+        fit: 'inside',
+        position: 'center',
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      })
+      .png()
+      .toBuffer();
     }
   },
   async afterConnected() {
