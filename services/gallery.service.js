@@ -4,10 +4,11 @@ const { MoleculerClientError } = require('moleculer').Errors;
 const RethinkDBAdapter = require('moleculer-db-adapter-rethinkdb');
 const DBService = require('moleculer-db');
 const r = require('rethinkdb');
-const { streamToBuffer } = require('../src/util.js');
 const streamMeter = require('stream-meter');
 const sharp = require('sharp');
 const fileType = require('file-type');
+
+const { streamToBuffer } = require('../src/util.js');
 
 module.exports = {
   name: 'gallery',
@@ -15,8 +16,8 @@ module.exports = {
   settings: {
     thumbnailSizes: {
       small: 128,
-      medium: 256,
-      large: 512
+      medium: 172,
+      large: 256
     },
     preview: {
       width: 1024,
@@ -46,7 +47,14 @@ module.exports = {
 
       return result;
     },
-    generatePreview(buffer) {
+    async generatePreview(buffer) {
+      const metadata = await sharp(buffer).metadata();
+
+      if (metadata.width <= this.settings.preview.width &&
+          metadata.height <= this.settings.preview.height) {
+        return buffer;
+      }
+
       return sharp(buffer)
       .resize({
         width: this.settings.preview.width,
@@ -60,12 +68,49 @@ module.exports = {
     }
   },
   async afterConnected() {
+    /*
+     * Create indices.
+     */
     const indices = await this.rTable().indexList().run(this.adapter.client);
 
     if (indices.length === 0) {
       await this.rTable().indexCreate('type_id', [r.row('type'), r.row('id')]).run(this.adapter.client);
       await this.rTable().indexCreate('filename').run(this.adapter.client);
     }
+
+    /*
+     * Send WS events on adding/removing files.
+     */
+    const cursor = await this.rTable().pluck([
+      'id',
+      'type',
+      'filename',
+      'mime'
+    ]).changes({
+      includeTypes: true
+    }).run(this.adapter.client);
+    cursor.each(async (err, change) => {
+      if (err) {
+        console.warn(`Error while listening to changes in the 'gallery' table.`);
+        return;
+      }
+
+      if (change.type === 'add') {
+        await this.broker.call('gateway.app.broadcast', {
+          subject: 'gallery-add',
+          data: {
+            file: change.new_val
+          }
+        });
+      } else if (change.type === 'remove') {
+        await this.broker.call('gateway.app.broadcast', {
+          subject: 'gallery-remove',
+          data: {
+            file: change.old_val
+          }
+        });
+      }
+    });
   },
   actions: {
     addFile: {
@@ -95,7 +140,8 @@ module.exports = {
           mime: ft.mime,
           file: buffer,
           ...type === 'image' && {
-            thumbnails: await this.generateThumbnails(buffer)
+            thumbnails: await this.generateThumbnails(buffer),
+            preview: await this.generatePreview(buffer)
           }
         }).run(this.adapter.client);
 
@@ -198,7 +244,7 @@ module.exports = {
           throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
         }
 
-        return thumbnail;
+        return thumbnail.toString('base64');
       }
     },
     getPreview: {
@@ -214,7 +260,7 @@ module.exports = {
           throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
         }
 
-        return preview;
+        return preview.toString('base64');
       }
     },
     getAudio: {
