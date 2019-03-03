@@ -136,7 +136,13 @@ module.exports = {
 
         const { generated_keys: [id] } = await this.rTable().insert({
           type,
-          filename,
+          filename: (() => {
+            if (filename.endsWith(ft.ext)) {
+              return filename;
+            } else {
+              return `${filename}.${ft.ext}`;
+            }
+          })(),
           mime: ft.mime,
           file: buffer,
           ...type === 'image' && {
@@ -171,7 +177,7 @@ module.exports = {
       async handler(ctx) {
         const { fileId } = ctx.params;
 
-        const file = await this.rTable().get(fileId).getField('file').run(this.adapter.client);
+        const file = await this.rTable().get(fileId).run(this.adapter.client);
         if (!file) {
           throw new MoleculerClientError('File not found.', 404, 'ERR_FILE_NOT_FOUND');
         }
@@ -255,12 +261,12 @@ module.exports = {
       async handler(ctx) {
         const { fileId } = ctx.params;
 
-        const preview = await this.rTable().get(fileId).getField('preview').run(this.adapter.client);
+        const preview = await this.rTable().get(fileId).pluck(['id', 'filename', 'mime', 'preview']).run(this.adapter.client);
         if (!preview) {
           throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
         }
 
-        return preview.toString('base64');
+        return preview;
       }
     },
     getAudio: {

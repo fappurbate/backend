@@ -42,8 +42,14 @@ module.exports.extractPackage =
 async function extractPackage(packageStream) {
   const tmpDir = tmp.dirSync();
   const writer = tar.extract(tmpDir.name);
+
+  const promise = new Promise((resolve, reject) => {
+    writer.once('finish', resolve);
+    writer.on('error', reject);
+  });
+
   packageStream.pipe(writer);
-  await new Promise(resolve => writer.once('finish', resolve));
+  await promise;
 
   return tmpDir.name;
 }

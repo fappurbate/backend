@@ -46,9 +46,17 @@ module.exports = {
 				'DELETE gallery/:fileId':                                            'gallery.removeFile',
 				'GET    gallery/images':                                             'gallery.getImages',
 				'GET    gallery/audio':                                              'gallery.getAudio',
-				'GET    gallery/:fileId':                                            'gallery.getFile',
+				async 'GET gallery/:fileId'(req, res) {
+					const file = await req.$service.broker.call('gallery.getFile', req.$params);
+					res.setHeader('Content-Type', file.mime);
+					res.end(file.file);
+				},
 				'GET    gallery/:fileId/thumbnail':                                  'gallery.getThumbnail',
-				'GET    gallery/:fileId/preview':                                    'gallery.getPreview'
+				async 'GET gallery/:fileId/preview'(req, res) {
+					const file = await req.$service.broker.call('gallery.getPreview', req.$params);
+					res.setHeader('Content-Type', file.mime);
+					res.end(file.preview);
+				}
 			},
 			whitelist: [/.*/]
 		}],
