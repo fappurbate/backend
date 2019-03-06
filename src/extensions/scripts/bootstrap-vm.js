@@ -133,5 +133,19 @@ global.fb = {
       return api.cb.isExtractingAccountActivity.applySync();
     },
     sendMessage: message => api.cb.sendMessage.applyIgnored(undefined, [message])
+  },
+  gallery: {
+    onAdd: {
+      addListener: callback => {
+        api.gallery.onAdd.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
+        return global.fb.gallery;
+      }
+    },
+    onRemove: {
+      addListener: callback => {
+        api.gallery.onRemove.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
+        return global.fb.gallery;
+      }
+    }
   }
 };

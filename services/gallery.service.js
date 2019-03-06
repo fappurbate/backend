@@ -104,6 +104,7 @@ module.exports = {
             file: change.new_val
           }
         });
+        this.broker.emit('gallery-add', { file: change.new_val });
       } else if (change.type === 'remove') {
         await this.broker.call('gateway.app.broadcast', {
           subject: 'gallery-remove',
@@ -111,6 +112,7 @@ module.exports = {
             file: change.old_val
           }
         });
+        this.broker.emit('gallery-remove', { file: change.old_val });
       }
     });
   },

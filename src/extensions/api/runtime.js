@@ -11,6 +11,8 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
 
   const meta = { events, requests };
 
+  // TODO: fix clash between onEvent('start', ...) and onStart.addListener(...)
+  // and between onRequest('stop', ...) and onStop.addHandler(...)
   events.on('start', meta.startListener = () => eventHandlers.emit('start'));
 
   requests.on('stop', meta.stopHandler = () => requestHandlers.request('stop'));

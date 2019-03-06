@@ -124,6 +124,16 @@ module.exports = {
 			}
 
 			this.apiEventHandlers.emit('extract-account-activity-stop', { username });
+		},
+		'gallery-add'(payload) {
+			const { file } = payload;
+
+			this.apiEventHandlers.emit('gallery-add', { file });
+		},
+		'gallery-remove'(payload) {
+			const { file } = payload;
+
+			this.apiEventHandlers.emit('gallery-remove', { file });
 		}
 	},
   actions: {
