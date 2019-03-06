@@ -49,6 +49,7 @@
     "async-busboy": "^0.7.0",
     "file-type": "^10.8.0",
     "fs-extra": "^7.0.1",
+    "http-range": "^1.0.0",
     "isolated-vm": "^1.7.9",
     "moleculer": "^0.13.0",
     "moleculer-db": "^0.7.7",

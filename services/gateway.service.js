@@ -4,6 +4,7 @@ const ApiGateway = require('moleculer-web');
 const SocketIOService = require('@kothique/moleculer-io');
 const { MoleculerError } = require('moleculer').Errors;
 const asyncBusboy = require('async-busboy');
+const { Range, ContentRange } = require('http-range');
 
 module.exports = {
 	name: 'gateway',
@@ -46,19 +47,51 @@ module.exports = {
 				'DELETE gallery/:fileId':                                            'gallery.removeFile',
 				'GET    gallery/images':                                             'gallery.getImages',
 				'GET    gallery/audio':                                              'gallery.getAudio',
-				async 'GET gallery/:fileId'(req, res) {
-					const file = await req.$service.broker.call('gallery.getFile', req.$params);
-					res.setHeader('Content-Type', file.mime);
-					res.end(file.file);
-				},
+				'GET    gallery/:fileId':                                            'gallery.getFile',
 				'GET    gallery/:fileId/thumbnail':                                  'gallery.getThumbnail',
-				async 'GET gallery/:fileId/preview'(req, res) {
-					const file = await req.$service.broker.call('gallery.getPreview', req.$params);
-					res.setHeader('Content-Type', file.mime);
-					res.end(file.preview);
+				'GET    gallery/:fileId/preview':                                    'gallery.getPreview'
+			},
+			whitelist: [/.*/],
+			onBeforeCall(ctx, route, req, res) {
+				if (req.headers.range) {
+					const range = Range.prototype.parse(req.headers.range);
+					if (range.unit !== 'bytes') {
+						throw new MoleculerClientError('Unit for \'range\' header must be \'bytes\'.');
+					}
+
+					ctx.meta.range = {
+						start: range.ranges[0].low,
+						end: range.ranges[0].high
+					};
+
+					console.log(req.headers.range);
+					console.log(ctx.meta.range);
 				}
 			},
-			whitelist: [/.*/]
+			onAfterCall(ctx, route, req, res, data) {
+				if (ctx.meta.range) {
+					res.status = 206;
+					res.setHeader('Accept-Ranges', 'bytes');
+					if (ctx.meta.contentLength) {
+						res.setHeader('Content-Length', ctx.meta.contentLength);
+					}
+
+					const range = !ctx.meta.range.start && !ctx.meta.range.end
+						? '*'
+						: `${ctx.meta.range.start || ''}-${ctx.meta.range.end || ''}`;
+					res.setHeader('Content-Range', `bytes ${range}/${ctx.meta.contentLength || '*'}`);
+				}
+
+				if (ctx.meta.contentType) {
+					res.setHeader('Content-Type', ctx.meta.contentType);
+				}
+
+				if (Buffer.isBuffer(data)) {
+					res.end(data);
+				} else {
+					res.end(JSON.stringify(data));
+				}
+			}
 		}],
 
 		io: {

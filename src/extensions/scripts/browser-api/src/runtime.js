@@ -1,6 +1,6 @@
 import RequestTarget from '@kothique/request-target';
 
-// there will not be window.parent later
+// there will be no window.parent later
 const parent = window.parent;
 
 const eventHandlers = new EventTarget;

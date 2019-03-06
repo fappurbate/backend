@@ -9740,7 +9740,7 @@ module.exports = g;
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-// there will not be window.parent later
+// there will be no window.parent later
 var parent = window.parent;
 var eventHandlers = new EventTarget();
 var nextRequestId = 0;
@@ -9927,6 +9927,73 @@ function (_Error) {
 
 /***/ }),
 
+/***/ "./src/extensions/scripts/browser-api/src/gallery.js":
+/*!***********************************************************!*\
+  !*** ./src/extensions/scripts/browser-api/src/gallery.js ***!
+  \***********************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _error__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./error */ "./src/extensions/scripts/browser-api/src/error.js");
+ // there will be no window.parent later
+
+var parent = window.parent;
+var nextRequestId = 0;
+var requests = {};
+window.addEventListener('message', function (event) {
+  var _event$data = event.data,
+      subject = _event$data.subject,
+      data = _event$data.data;
+
+  if (subject === 'gallery-select') {
+    var requestId = data.requestId,
+        selection = data.selection;
+    requests[requestId](selection);
+  }
+});
+/* harmony default export */ __webpack_exports__["default"] = (function () {
+  return {
+    /**
+     * Prompt the user to select image(s) or audio.
+     *
+     * @param {object}           options
+     * @param {'images'|'audio'} options.type
+     * @param {boolean?}         options.multiple
+     * @return {Promise} - Resolves to undefined, if the dialog was canceled. Otherwise,
+     *    resolves to the file ID [array of IDs] of the selected file [files].
+     * @throws {fb.Error}
+     */
+    select: function select(options) {
+      if (!options.type || !['images', 'audio'].includes(options.type)) {
+        throw new _error__WEBPACK_IMPORTED_MODULE_0__["default"]('Invalid type.', 'ERR_INVALID_TYPE');
+      }
+
+      var type = options.type;
+      var multiple = typeof options.multiple === 'boolean' ? options.multiple : false;
+      var requestId = nextRequestId++;
+      var promise = new Promise(function (resolve) {
+        requests[requestId] = function (result) {
+          delete requests[requestId];
+          resolve(result);
+        };
+      });
+      parent.postMessage({
+        subject: 'gallery-select',
+        data: {
+          requestId: requestId,
+          type: type,
+          multiple: multiple
+        }
+      }, '*');
+      return promise;
+    }
+  };
+});
+
+/***/ }),
+
 /***/ "./src/extensions/scripts/browser-api/src/index.js":
 /*!*********************************************************!*\
   !*** ./src/extensions/scripts/browser-api/src/index.js ***!
@@ -9938,9 +10005,11 @@ function (_Error) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _babel_polyfill__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @babel/polyfill */ "./node_modules/@babel/polyfill/lib/index.js");
 /* harmony import */ var _babel_polyfill__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_babel_polyfill__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _runtime__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./runtime */ "./src/extensions/scripts/browser-api/src/runtime.js");
-/* harmony import */ var _chaturbate__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./chaturbate */ "./src/extensions/scripts/browser-api/src/chaturbate.js");
-/* harmony import */ var _error__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./error */ "./src/extensions/scripts/browser-api/src/error.js");
+/* harmony import */ var _chaturbate__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./chaturbate */ "./src/extensions/scripts/browser-api/src/chaturbate.js");
+/* harmony import */ var _gallery__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./gallery */ "./src/extensions/scripts/browser-api/src/gallery.js");
+/* harmony import */ var _runtime__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./runtime */ "./src/extensions/scripts/browser-api/src/runtime.js");
+/* harmony import */ var _error__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./error */ "./src/extensions/scripts/browser-api/src/error.js");
+
 
 
 
@@ -9967,15 +10036,16 @@ Object.values(nodes).forEach(function (node) {
   return node && node.remove();
 });
 window.fb = {
-  runtime: Object(_runtime__WEBPACK_IMPORTED_MODULE_1__["default"])(data),
-  cb: Object(_chaturbate__WEBPACK_IMPORTED_MODULE_2__["default"])(data),
-  Error: _error__WEBPACK_IMPORTED_MODULE_3__["default"]
+  cb: Object(_chaturbate__WEBPACK_IMPORTED_MODULE_1__["default"])(data),
+  gallery: Object(_gallery__WEBPACK_IMPORTED_MODULE_2__["default"])(data),
+  runtime: Object(_runtime__WEBPACK_IMPORTED_MODULE_3__["default"])(data),
+  Error: _error__WEBPACK_IMPORTED_MODULE_4__["default"]
 };
 var oldAddEventListener = window.addEventListener;
 
 window.addEventListener = function addEventListener(type) {
   if (type === 'message') {
-    throw new _error__WEBPACK_IMPORTED_MODULE_3__["default"]("Don't listen to 'message', better use Fappurbate API ^_^.");
+    throw new _error__WEBPACK_IMPORTED_MODULE_4__["default"]("Don't listen to 'message', better use Fappurbate API ^_^.");
   }
 
   for (var _len = arguments.length, rest = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -9988,7 +10058,7 @@ window.addEventListener = function addEventListener(type) {
 var oldOnMessage = window.onmessage;
 Object.defineProperty(window, 'onmessage', {
   set: function set() {
-    throw new _error__WEBPACK_IMPORTED_MODULE_3__["default"]("Please don't set 'onmessage', Fappurbate API is better (I hope)! If it's not, create an issue on GitHub ^-^");
+    throw new _error__WEBPACK_IMPORTED_MODULE_4__["default"]("Please don't set 'onmessage', Fappurbate API is better (I hope)! If it's not, create an issue on GitHub ^-^");
   },
   get: function get() {
     return oldOnMessage;
@@ -9997,7 +10067,7 @@ Object.defineProperty(window, 'onmessage', {
 var oldParent = window.parent;
 Object.defineProperty(window, 'parent', {
   get: function get() {
-    throw new _error__WEBPACK_IMPORTED_MODULE_3__["default"]("There's no parent anymore.");
+    throw new _error__WEBPACK_IMPORTED_MODULE_4__["default"]("There's no parent anymore.");
   }
 });
 
@@ -10014,7 +10084,7 @@ Object.defineProperty(window, 'parent', {
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _kothique_request_target__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @kothique/request-target */ "./node_modules/@kothique/request-target/dist/index.js");
 /* harmony import */ var _kothique_request_target__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_kothique_request_target__WEBPACK_IMPORTED_MODULE_0__);
- // there will not be window.parent later
+ // there will be no window.parent later
 
 var parent = window.parent;
 var eventHandlers = new EventTarget();

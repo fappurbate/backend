@@ -1,7 +1,8 @@
 import '@babel/polyfill';
 
-import runtime from './runtime';
 import cb from './chaturbate';
+import gallery from './gallery';
+import runtime from './runtime';
 import FappurbateError from './error';
 
 const nodes = {
@@ -27,8 +28,9 @@ const data = {
 Object.values(nodes).forEach(node => node && node.remove());
 
 window.fb = {
-  runtime: runtime(data),
   cb: cb(data),
+  gallery: gallery(data),
+  runtime: runtime(data),
   Error: FappurbateError
 };
 

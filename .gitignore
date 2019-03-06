@@ -45,6 +45,6 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
-/extensions
-/src/extensions/scripts/browser-api/dist
-/rethinkdb_data
+/extensions/
+src/extensions/scripts/browser-api/dist/
+rethinkdb_data/

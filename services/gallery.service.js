@@ -7,6 +7,8 @@ const r = require('rethinkdb');
 const streamMeter = require('stream-meter');
 const sharp = require('sharp');
 const fileType = require('file-type');
+const { Readable } = require('stream');
+
 
 const { streamToBuffer } = require('../src/util.js');
 
@@ -182,7 +184,10 @@ module.exports = {
           throw new MoleculerClientError('File not found.', 404, 'ERR_FILE_NOT_FOUND');
         }
 
-        return file;
+        ctx.meta.contentType = file.mime;
+        ctx.meta.contentLength = file.file.length;
+
+        return file.file;
       }
     },
     getImages: {
@@ -266,7 +271,10 @@ module.exports = {
           throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
         }
 
-        return preview;
+        ctx.meta.contentType = preview.mime;
+        ctx.meta.contentLength = preview.preview.length;
+
+        return preview.preview;
       }
     },
     getAudio: {
