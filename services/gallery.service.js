@@ -175,11 +175,12 @@ module.exports = {
     },
     getFile: {
       params: {
-        fileId: 'string'
+        fileId: 'string',
+        encoding: { type: 'enum', values: ['base64', 'binary'], optional: true }
       },
       visibility: 'published',
       async handler(ctx) {
-        const { fileId } = ctx.params;
+        const { fileId, encoding = 'binary' } = ctx.params;
 
         const file = await this.rTable().get(fileId).run(this.adapter.client);
         if (!file) {
@@ -189,7 +190,28 @@ module.exports = {
         ctx.meta.contentType = file.mime;
         ctx.meta.contentLength = file.file.length;
 
-        return file.file;
+        return encoding === 'base64' ? file.file.toString('base64') : file.file;
+      }
+    },
+    getMetadata: {
+      params: {
+        fileId: 'string'
+      },
+      visibility: 'published',
+      async handler(ctx) {
+        const { fileId } = ctx.params;
+
+        const metadata = await this.rTable().get(fileId).pluck([
+          'id',
+          'type',
+          'filename',
+          'mime'
+        ]).run(this.adapter.client);
+        if (!metadata) {
+          throw new MoleculerClientError('File not found.', 404, 'ERR_FILE_NOT_FOUND');
+        }
+
+        return metadata;
       }
     },
     getImages: {
@@ -262,11 +284,12 @@ module.exports = {
     },
     getPreview: {
       params: {
-        fileId: 'string'
+        fileId: 'string',
+        encoding: { type: 'enum', values: ['base64', 'binary'], optional: true }
       },
       visibility: 'published',
       async handler(ctx) {
-        const { fileId } = ctx.params;
+        const { fileId, encoding = 'binary' } = ctx.params;
 
         const preview = await this.rTable().get(fileId).pluck(['id', 'filename', 'mime', 'preview']).run(this.adapter.client);
         if (!preview) {
@@ -276,7 +299,7 @@ module.exports = {
         ctx.meta.contentType = preview.mime;
         ctx.meta.contentLength = preview.preview.length;
 
-        return preview.preview;
+        return encoding === 'base64' ? preview.preview.toString('base64') : preview.preview;
       }
     },
     getAudio: {

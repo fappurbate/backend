@@ -48,6 +48,7 @@ module.exports = {
 				'GET    gallery/images':                                             'gallery.getImages',
 				'GET    gallery/audio':                                              'gallery.getAudio',
 				'GET    gallery/:fileId':                                            'gallery.getFile',
+				'GET    gallery/:fileId/metadata':                                   'gallery.getMetadata',
 				'GET    gallery/:fileId/thumbnail':                                  'gallery.getThumbnail',
 				'GET    gallery/:fileId/preview':                                    'gallery.getPreview'
 			},
