@@ -1,5 +1,7 @@
 import FappurbateError from './error';
 
+const eventHandlers = new EventTarget;
+
 // there will be no window.parent later
 const parent = window.parent;
 
@@ -13,6 +15,18 @@ window.addEventListener('message', event => {
     const { requestId, selection } = data;
 
     requests[requestId](selection);
+  } else if (subject === 'gallery-add') {
+    const { file } = data;
+
+    eventHandlers.dispatchEvent(new CustomEvent('gallery-add', {
+      detail: { file }
+    }));
+  } else if (subject === 'gallery-remove') {
+    const { file } = data;
+
+    eventHandlers.dispatchEvent(new CustomEvent('gallery-remove', {
+      detail: { file }
+    }));
   }
 });
 
@@ -54,5 +68,21 @@ export default () => ({
     }, '*');
 
     return promise;
+  },
+  onAdd: {
+    addListener: callback => {
+      eventHandlers.addEventListener('gallery-add', event => {
+        const { file } = event.detail;
+        callback(file);
+      })
+    }
+  },
+  onRemove: {
+    addListener: callback => {
+      eventHandlers.addEventListener('gallery-remove', event => {
+        const { file } = event.detail;
+        callback(file);
+      })
+    }
   }
 });
