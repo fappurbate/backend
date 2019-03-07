@@ -146,6 +146,9 @@ global.fb = {
         api.gallery.onRemove.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
         return global.fb.gallery;
       }
+    },
+    playAudio: id => {
+      api.gallery.playAudio.applyIgnored(undefined, [id]);
     }
   }
 };

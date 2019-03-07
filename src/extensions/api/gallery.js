@@ -40,7 +40,11 @@ module.exports.createGalleryAPI = function createGalleryAPI(data) {
             [new ivm.ExternalCopy(file).copyInto()]
           )).catch(logError);
         })
-      }
+      },
+      playAudio: new ivm.Reference(id => callAction('gateway.ext.broadcast', {
+        subject: 'play-audio',
+        data: { id }
+      }))
     },
     meta
   };
