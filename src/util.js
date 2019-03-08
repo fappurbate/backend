@@ -1,3 +1,5 @@
+'use strict';
+
 function streamToBuffer(stream) {
   return new Promise((resolve, reject) => {
     const bufs = [];

@@ -4,17 +4,24 @@ delete _ivm;
 const api = _api;
 delete _api;
 
-global.fb = {
-  Error: class FappurbateError extends Error {
-    constructor(message, type, data) {
-      super(message);
-      Error.captureStackTrace(this, FappurbateError);
+class FappurbateError extends Error {
+  constructor(message, type, data) {
+    super(message);
+    Error.captureStackTrace(this, FappurbateError);
 
-      this.name = 'FappurbateError';
-      this.type = type;
-      this.data = data;
-    }
-  },
+    this.name = 'FappurbateError';
+    this.type = type;
+    this.data = data;
+  }
+}
+
+function objectToError(object) {
+  const { message, type, data } = object;
+  return new FappurbateError(message, type, data);
+}
+
+global.fb = {
+  Error: FappurbateError,
   runtime: {
     id: api.runtime.id,
     name: api.runtime.name,
@@ -150,5 +157,44 @@ global.fb = {
     playAudio: id => {
       api.gallery.playAudio.applyIgnored(undefined, [id]);
     }
+  },
+  storage: {
+    set: (arg1, arg2) => {
+      const pairs = typeof arg1 === 'object' ? arg1 : { [arg1]: arg2 };
+
+      return new Promise((resolve, reject) =>
+        api.storage.set.applyIgnored(undefined, [
+          new ivm.ExternalCopy(pairs).copyInto(),
+          new ivm.Reference(err => err ? reject(objectToError(err)) : resolve())
+        ]));
+    },
+    get: arg1 => {
+      const keys = Array.isArray(arg1) ? arg1 : [arg1];
+
+      const result = new Promise((resolve, reject) =>
+        api.storage.get.applyIgnored(undefined, [
+          new ivm.ExternalCopy(keys).copyInto(),
+          new ivm.Reference((err, result) => err ? reject(objectToError(err)) : resolve(result))
+        ]));
+
+      return result.then(result => Array.isArray(arg1) ? result : result[arg1]);
+    },
+    remove: arg1 => {
+      const keys = Array.isArray(arg1) ? arg1 : [arg1];
+
+      return new Promise((resolve, reject) =>
+        api.storage.remove.applyIgnored(undefined, [
+          new ivm.ExternalCopy(keys).copyInto(),
+          new ivm.Reference((err, result) => err ? reject(objectToError(err)) : resolve(result))
+        ]));
+    },
+    getAll: () => new Promise((resolve, reject) =>
+      api.storage.getAll.applyIgnored(undefined, [
+        new ivm.Reference((err, result) => err ? reject(objectToError(err)) : resolve(result))
+      ])),
+    removeAll: () => new Promise((resolve, reject) =>
+      api.storage.removeAll.applyIgnored(undefined, [
+        new ivm.Reference((err, result) => err ? reject(objectToError(err)) : resolve(result))
+      ]))
   }
 };

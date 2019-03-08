@@ -13,13 +13,14 @@ class VM extends EventEmitter {
     super();
 
     const { extension, broadcaster, extensionsPath,
-      callAction, emitEvent, apiEventHandlers, apiRequestHandlers,
+      callAction, emitEvent, r, apiEventHandlers, apiRequestHandlers,
       isBroadcasting, isExtractingAccountActivity } = options;
 
     this.extension = extension;
     this.broadcaster = broadcaster;
     this.callAction = callAction;
     this.emitEvent = emitEvent;
+    this.r = r;
     this.apiEventHandlers = apiEventHandlers;
     this.apiRequestHandlers = apiRequestHandlers;
     this.isBroadcasting = isBroadcasting;
@@ -59,6 +60,7 @@ class VM extends EventEmitter {
       logError: this.logError.bind(this),
       callAction: this.callAction,
       emitEvent: this.emitEvent,
+      r: this.r,
       events: this.apiEventHandlers,
       requests: this.apiRequestHandlers,
       isBroadcasting: this.isBroadcasting,

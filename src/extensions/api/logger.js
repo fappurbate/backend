@@ -12,8 +12,7 @@ module.exports.createLoggerAPI = function createLoggerAPI(data) {
       debug: new ivm.Reference((...args) => logger.log('debug', ...args)),
       silly: new ivm.Reference((...args) => logger.log('silly', ...args)),
       setLevel: new ivm.Reference(level => logger.level = level)
-    },
-    meta: null
+    }
   };
 };
 

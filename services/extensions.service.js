@@ -8,6 +8,7 @@ const MongoDBAdapter = require('moleculer-db-adapter-mongo');
 const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 const RequestTarget = require('@kothique/request-target');
 const EventEmitter = require('events');
+const msgpack = require('msgpack-lite');
 
 const { createLogger } = require('../src/extensions/logger');
 const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('../src/extensions/util');
@@ -29,7 +30,23 @@ module.exports = {
 
     path: 'extensions'
 	},
-  created() {
+  async created() {
+		this.r = require('../src/r')({ log: message => this.logger.debug(message) });
+
+		// TODO: move to a mixin (and all r-related stuff)
+		{
+			const dbs = await this.r.dbList();
+			if (!dbs.includes('fappurbate')) {
+				await this.r.dbCreate('fappurbate')
+					.catch(error => this.logger.error('Failed to create DB.', { error }));
+			}
+
+			const tables = await this.r.tableList();
+			if (!tables.includes('extensions_storage')) {
+				await this.r.tableCreate('extensions_storage');
+			}
+		}
+
     this.vmsByBroadcaster = {};
 		this.apiEventHandlers = new EventEmitter;
 		this.apiRequestHandlers = new RequestTarget({
@@ -41,6 +58,9 @@ module.exports = {
 		this.online = {};
 		this.extracting = {};
   },
+	stopped() {
+		this.r.getPoolMaster().drain();
+	},
   methods: {
     getBroadcasterVMs(broadcaster) {
       return this.vmsByBroadcaster[broadcaster] || (this.vmsByBroadcaster[broadcaster] = {});
@@ -302,7 +322,7 @@ module.exports = {
           for (const id in this.getBroadcasterVMs(broadcaster)) {
             if (extensionId === extension._id.toString()) {
               try {
-                await ctx.call('extensions.stop', { extensionId, broadcaster });
+								await this.actions.stop({ extensionId, broadcaster });
               } catch (error) {
 								this.logger.error('Failed to stop extension.', 500, 'ERR_STOP_EXTENSION', { extension });
               }
@@ -310,6 +330,7 @@ module.exports = {
           }
         }
 
+				await this.actions.clearStorage({ extensionId });
 				await this.adapter.collection.deleteOne({ _id: extension._id });
 
 				await fs.remove(path.join(this.settings.path, extension._id.toString()));
@@ -342,6 +363,7 @@ module.exports = {
 					extension,
 					broadcaster,
 					extensionsPath: this.settings.path,
+					r: this.r,
 					callAction: this.broker.call.bind(this.broker),
 					emitEvent: this.broker.emit.bind(this.broker),
 					apiEventHandlers: this.apiEventHandlers,
@@ -352,13 +374,13 @@ module.exports = {
 
 				vm.on('error', async error => {
 					this.logger.debug(`VM encountered an error:`, error);
-					await ctx.call('extensions.stop', {
-						extensionId: extensionId.toString(),
+					await this.actions.stop({
+						extensionId,
 						broadcaster
 					});
 				});
 
-				this.logger.info(`Starting extension ${extension.name} (${extension._id.toString()})..`);
+				this.logger.info(`Starting extension ${extension.name} (${extension._id.toString()})...`);
 				await vm.start();
 
 				const vmInfo = vms[extension._id.toString()] = {
@@ -518,7 +540,7 @@ module.exports = {
 
 				await Promise.all(
 					Object.entries(this.getBroadcasterVMs(broadcaster)).map(async ([extensionId, { vm }]) => {
-						const page = await ctx.call('extensions.getPage', {
+						const page = await this.actions.getPage({
 							extensionId,
 							broadcaster,
 							page: 'stream'
@@ -544,13 +566,121 @@ module.exports = {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
 
-				const page = await ctx.call('extensions.getPage', {
+				const page = await this.actions.getPage({
 					extensionId,
 					broadcaster,
 					page: 'stream'
 				});
 
 				return { page, extension };
+			}
+		},
+		storageSet: {
+			params: {
+				extensionId: 'string',
+				broadcaster: 'string',
+				pairs: 'object'
+			},
+			visibility: 'public',
+			async handler(ctx) {
+				const { extensionId, broadcaster, pairs } = ctx.params;
+
+				await Promise.all(
+					Object.entries(pairs).map(([key, value]) =>
+						this.r.table('extensions_storage').get([extensionId, broadcaster, key]).replace({
+							id: [extensionId, broadcaster, key],
+							value: msgpack.encode(value)
+						})
+					)
+				);
+			}
+		},
+		storageGet: {
+			params: {
+				extensionId: 'string',
+				broadcaster: 'string',
+				keys: { type: 'array', items: 'string' }
+			},
+			visibility: 'public',
+			async handler(ctx) {
+				const { extensionId, broadcaster, keys } = ctx.params;
+
+				const result = await this.r.table('extensions_storage').getAll(
+					...keys.map(key => [extensionId, broadcaster, key])
+				)
+				.map(doc => [doc('id')(2), doc('value')])
+				.coerceTo('object');
+
+				keys.forEach(key => result[key] = result[key] ? msgpack.decode(result[key]) : undefined);
+
+				return result;
+			}
+		},
+		storageRemove: {
+			params: {
+				extensionId: 'string',
+				broadcaster: 'string',
+				keys: { type: 'array', items: 'string' }
+			},
+			visibility: 'public',
+			async handler(ctx) {
+				const { extensionId, broadcaster, keys } = ctx.params;
+
+				const { deleted } = await this.r.table('extensions_storage').getAll(
+					...keys.map(key => [extensionId, broadcaster, key])
+				).delete();
+				return deleted;
+			}
+		},
+		storageGetAll: {
+			params: {
+				extensionId: 'string',
+				broadcaster: 'string'
+			},
+			visibility: 'public',
+			async handler(ctx) {
+				const { extensionId, broadcaster } = ctx.params;
+
+				const result = await this.r.table('extensions_storage').between(
+					[extensionId, broadcaster, this.r.minval],
+					[extensionId, broadcaster, this.r.maxval]
+				)
+				.map(doc => [doc('id')(2), doc('value')])
+				.coerceTo('object');
+
+				Object.keys(result).forEach(key => result[key] = msgpack.decode(result[key]));
+
+				return result;
+			}
+		},
+		storageRemoveAll: {
+			params: {
+				extensionId: 'string',
+				broadcaster: 'string'
+			},
+			visibility: 'public',
+			async handler(ctx) {
+				const { extensionId, broadcaster } = ctx.params;
+
+				const { deleted } = await this.r.table('extensions_storage').between(
+					[extensionId, broadcaster, this.r.minval],
+					[extensionId, broadcaster, this.r.maxval]
+				).delete();
+				return deleted;
+			}
+		},
+		clearStorage: {
+			params: {
+				extensionId: 'string'
+			},
+			visibility: 'private',
+			async handler(ctx) {
+				const { extensionId } = ctx.params;
+
+				await this.r.table('extensions_storage').between(
+					[extensionId, this.r.minval, this.r.minval],
+					[extensionId, this.r.maxval, this.r.maxval]
+				).delete();
 			}
 		}
   }

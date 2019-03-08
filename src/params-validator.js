@@ -1,13 +1,16 @@
+'use strict';
+
 const BaseValidator = require('moleculer').Validator;
 const { ValidationError } = require('moleculer').Errors;
 const Validator = require('fastest-validator');
+const { Stream } = require('stream');
 
 class ParamsValidator extends BaseValidator {
 	constructor() {
 		super();
 
 		this.validator = new Validator;
-    this.validator.add('stream', value => value instanceof require('stream').Stream);
+    this.validator.add('stream', value => value instanceof Stream);
 	}
 
 	compile(schema) {
