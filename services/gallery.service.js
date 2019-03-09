@@ -1,20 +1,17 @@
 'use strict';
 
 const { MoleculerClientError } = require('moleculer').Errors;
-const RethinkDBAdapter = require('moleculer-db-adapter-rethinkdb');
-const DBService = require('moleculer-db');
-const r = require('rethinkdb');
 const streamMeter = require('stream-meter');
 const sharp = require('sharp');
 const fileType = require('file-type');
 const { Readable } = require('stream');
-
+const RService = require('@kothique/moleculer-rethinkdbdash');
 
 const { streamToBuffer } = require('../src/util.js');
 
 module.exports = {
   name: 'gallery',
-  mixins: [DBService],
+  mixins: [RService],
   settings: {
     thumbnailSizes: {
       small: 128,
@@ -26,11 +23,53 @@ module.exports = {
       height: 768
     }
   },
-  adapter: new RethinkDBAdapter({ host: '127.0.0.1', port: 28015 }),
-  database: 'fappurbate',
-  table: 'gallery',
+  rOptions: {
+    db: 'fappurbate'
+  },
+  rInitial: r => ({
+    fappurbate: {
+      gallery: {
+        $default: true,
+        type_id: { $function: [r.row('type'), r.row('id')] },
+        filename: true
+      }
+    }
+  }),
+  async rOnReady() {
+    const cursor = await this.rTable.pluck([
+      'id',
+      'type',
+      'filename',
+      'mime'
+    ]).changes({
+      includeTypes: true
+    });
+    cursor.each(async (err, change) => {
+      if (err) {
+        this.logger.warn(`Error while listening to changes in the 'gallery' table.`);
+        return;
+      }
+
+      if (change.type === 'add') {
+        await this.broker.call('gateway.app.broadcast', {
+          subject: 'gallery-add',
+          data: {
+            file: change.new_val
+          }
+        });
+        this.broker.emit('gallery-add', { file: change.new_val });
+      } else if (change.type === 'remove') {
+        await this.broker.call('gateway.app.broadcast', {
+          subject: 'gallery-remove',
+          data: {
+            file: change.old_val
+          }
+        });
+        this.broker.emit('gallery-remove', { file: change.old_val });
+      }
+    });
+  },
   methods: {
-    rTable() { return this.adapter.getTable(); },
     async generateThumbnails(buffer) {
       const result = {};
 
@@ -69,53 +108,6 @@ module.exports = {
       .toBuffer();
     }
   },
-  async afterConnected() {
-    /*
-     * Create indices.
-     */
-    const indices = await this.rTable().indexList().run(this.adapter.client);
-
-    if (indices.length === 0) {
-      await this.rTable().indexCreate('type_id', [r.row('type'), r.row('id')]).run(this.adapter.client);
-      await this.rTable().indexCreate('filename').run(this.adapter.client);
-    }
-
-    /*
-     * Send WS events on adding/removing files.
-     */
-    const cursor = await this.rTable().pluck([
-      'id',
-      'type',
-      'filename',
-      'mime'
-    ]).changes({
-      includeTypes: true
-    }).run(this.adapter.client);
-    cursor.each(async (err, change) => {
-      if (err) {
-        console.warn(`Error while listening to changes in the 'gallery' table.`);
-        return;
-      }
-
-      if (change.type === 'add') {
-        await this.broker.call('gateway.app.broadcast', {
-          subject: 'gallery-add',
-          data: {
-            file: change.new_val
-          }
-        });
-        this.broker.emit('gallery-add', { file: change.new_val });
-      } else if (change.type === 'remove') {
-        await this.broker.call('gateway.app.broadcast', {
-          subject: 'gallery-remove',
-          data: {
-            file: change.old_val
-          }
-        });
-        this.broker.emit('gallery-remove', { file: change.old_val });
-      }
-    });
-  },
   actions: {
     addFile: {
       params: {
@@ -138,7 +130,7 @@ module.exports = {
           throw new MoleculerClientError('The file provided is not audio.', 422, 'ERR_INVALID_FILE');
         }
 
-        const { generated_keys: [id] } = await this.rTable().insert({
+        const { generated_keys: [id] } = await this.rTable.insert({
           type,
           filename: (() => {
             if (filename.endsWith(ft.ext)) {
@@ -153,7 +145,7 @@ module.exports = {
             thumbnails: await this.generateThumbnails(buffer),
             preview: await this.generatePreview(buffer)
           }
-        }).run(this.adapter.client);
+        });
 
         return id;
       }
@@ -166,7 +158,7 @@ module.exports = {
       async handler(ctx) {
         const { fileId } = ctx.params;
 
-        const { deleted } = await this.rTable().get(fileId).delete().run(this.adapter.client);
+        const { deleted } = await this.rTable.get(fileId).delete();
 
         if (deleted === 0) {
           throw new MoleculerClientError('File not found.', 404, 'ERR_FILE_NOT_FOUND');
@@ -182,7 +174,7 @@ module.exports = {
       async handler(ctx) {
         const { fileId, encoding = 'binary' } = ctx.params;
 
-        const file = await this.rTable().get(fileId).run(this.adapter.client);
+        const file = await this.rTable.get(fileId);
         if (!file) {
           throw new MoleculerClientError('File not found.', 404, 'ERR_FILE_NOT_FOUND');
         }
@@ -201,12 +193,12 @@ module.exports = {
       async handler(ctx) {
         const { fileId } = ctx.params;
 
-        const metadata = await this.rTable().get(fileId).pluck([
+        const metadata = await this.rTable.get(fileId).pluck([
           'id',
           'type',
           'filename',
           'mime'
-        ]).run(this.adapter.client);
+        ]);
         if (!metadata) {
           throw new MoleculerClientError('File not found.', 404, 'ERR_FILE_NOT_FOUND');
         }
@@ -236,7 +228,7 @@ module.exports = {
           }
         })(ctx.params.thumbnails);
 
-        let query = this.rTable().between(['image', lastId || r.minval], ['image', r.maxval], {
+        let query = this.rTable.between(['image', lastId || this.r.minval], ['image', this.r.maxval], {
           index: 'type_id',
           leftBound: 'open'
         });
@@ -250,9 +242,9 @@ module.exports = {
             'mime',
             ...thumbnails ? [{ thumbnails }] : []
           ])
-          .orderBy(r.desc('id'));
+          .orderBy(this.r.desc('id'));
 
-        const docs = await query.run(this.adapter.client).then(cursor => cursor.toArray());
+        const docs = await query;
 
         if (thumbnails) {
           docs.forEach(doc => {
@@ -274,7 +266,7 @@ module.exports = {
       async handler(ctx) {
         const { fileId, size = 'small' } = ctx.params;
 
-        const thumbnail = await this.rTable().get(fileId).getField('thumbnails').getField(size).run(this.adapter.client);
+        const thumbnail = await this.rTable.get(fileId).getField('thumbnails').getField(size);
         if (!thumbnail) {
           throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
         }
@@ -291,7 +283,7 @@ module.exports = {
       async handler(ctx) {
         const { fileId, encoding = 'binary' } = ctx.params;
 
-        const preview = await this.rTable().get(fileId).pluck(['id', 'filename', 'mime', 'preview']).run(this.adapter.client);
+        const preview = await this.rTable.get(fileId).pluck(['id', 'filename', 'mime', 'preview']);
         if (!preview) {
           throw new MoleculerClientError('File is not image or not found.', null, 'ERR_NOT_IMAGE_OR_NOT_FOUND');
         }
@@ -312,7 +304,7 @@ module.exports = {
         const { lastId } = ctx.params;
         const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
-        let query = this.rTable().between(['audio', lastId || r.minval], ['audio', r.maxval], {
+        let query = this.rTable.between(['audio', lastId || this.r.minval], ['audio', this.r.maxval], {
           index: 'type_id',
           leftBound: 'open'
         });
@@ -321,9 +313,9 @@ module.exports = {
         }
         query = query
           .pluck(['id', 'filename', 'mime'])
-          .orderBy(r.desc('id'));
+          .orderBy(this.r.desc('id'));
 
-        const docs = await query.run(this.adapter.client).then(cursor => cursor.toArray());
+        const docs = await query;
         return docs;
       }
     }

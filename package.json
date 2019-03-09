@@ -43,6 +43,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.2.5",
     "@kothique/moleculer-io": "^1.0.4",
+    "@kothique/moleculer-rethinkdbdash": "^0.1.0",
     "@kothique/request-target": "^2.3.1",
     "@kothique/winston-nedb": "^1.0.1",
     "ajv": "^6.9.1",
@@ -54,7 +55,6 @@
     "moleculer": "^0.13.0",
     "moleculer-db": "^0.7.7",
     "moleculer-db-adapter-mongo": "^0.4.2",
-    "moleculer-db-adapter-rethinkdb": "^0.2.9",
     "moleculer-io": "^1.0.2",
     "moleculer-web": "^0.8.0",
     "msgpack-lite": "^0.1.26",

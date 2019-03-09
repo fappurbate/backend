@@ -64,9 +64,6 @@ module.exports = {
 						start: range.ranges[0].low,
 						end: range.ranges[0].high
 					};
-
-					console.log(req.headers.range);
-					console.log(ctx.meta.range);
 				}
 			},
 			onAfterCall(ctx, route, req, res, data) {

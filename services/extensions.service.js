@@ -4,6 +4,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const { ObjectId } = require('bson');
 const DbService = require('moleculer-db');
+const RService = require('@kothique/moleculer-rethinkdbdash');
 const MongoDBAdapter = require('moleculer-db-adapter-mongo');
 const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 const RequestTarget = require('@kothique/request-target');
@@ -19,7 +20,15 @@ const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate'
 
 module.exports = {
 	name: 'extensions',
-  mixins: [DbService],
+  mixins: [DbService, RService],
+	rOptions: {
+		db: 'fappurbate'
+	},
+	rInitial: {
+		fappurbate: {
+			extensions_storage: true
+		}
+	},
 	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
 	collection: 'extensions',
 	settings: {
@@ -31,22 +40,6 @@ module.exports = {
     path: 'extensions'
 	},
   async created() {
-		this.r = require('../src/r')({ log: message => this.logger.debug(message) });
-
-		// TODO: move to a mixin (and all r-related stuff)
-		{
-			const dbs = await this.r.dbList();
-			if (!dbs.includes('fappurbate')) {
-				await this.r.dbCreate('fappurbate')
-					.catch(error => this.logger.error('Failed to create DB.', { error }));
-			}
-
-			const tables = await this.r.tableList();
-			if (!tables.includes('extensions_storage')) {
-				await this.r.tableCreate('extensions_storage');
-			}
-		}
-
     this.vmsByBroadcaster = {};
 		this.apiEventHandlers = new EventEmitter;
 		this.apiRequestHandlers = new RequestTarget({
@@ -58,9 +51,6 @@ module.exports = {
 		this.online = {};
 		this.extracting = {};
   },
-	stopped() {
-		this.r.getPoolMaster().drain();
-	},
   methods: {
     getBroadcasterVMs(broadcaster) {
       return this.vmsByBroadcaster[broadcaster] || (this.vmsByBroadcaster[broadcaster] = {});
