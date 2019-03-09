@@ -30,7 +30,7 @@ module.exports.createGalleryAPI = function createGalleryAPI(data) {
           eventHandlers.on('add', file => cbRef.apply(
             undefined,
             [new ivm.ExternalCopy(file).copyInto()]
-          )).catch(logError);
+          ).catch(logError));
         })
       },
       onRemove: {
@@ -38,7 +38,7 @@ module.exports.createGalleryAPI = function createGalleryAPI(data) {
           eventHandlers.on('remove', file => cbRef.apply(
             undefined,
             [new ivm.ExternalCopy(file).copyInto()]
-          )).catch(logError);
+          ).catch(logError));
         })
       },
       playAudio: new ivm.Reference(id => callAction('gateway.ext.broadcast', {

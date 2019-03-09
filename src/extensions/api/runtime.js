@@ -60,7 +60,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
             sender,
             new ivm.ExternalCopy(data).copyInto()
           ]
-        )).catch(logError);
+        ).catch(logError));
       })
     },
     emitEvent: new ivm.Reference((receivers, subject, data = null) => {
@@ -93,7 +93,7 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
             sender,
             new ivm.ExternalCopy(data).copyInto()
           ]
-        )).catch(logError);
+        ).catch(logError));
       })
     }
   };

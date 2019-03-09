@@ -51,6 +51,52 @@ module.exports = {
 		this.online = {};
 		this.extracting = {};
   },
+	async rOnReady() {
+		const cursor = await this.r.table('extensions_storage').changes({
+			includeTypes: true
+		});
+		cursor.each(async (err, change) => {
+			if (err) {
+				this.logger.warn(`Error while listening to changes in the 'extensions_storage' table.`);
+				return;
+			}
+
+			if (change.type === 'add') {
+				const data = {
+					extensionId: change.new_val.id[0],
+					broadcaster: change.new_val.id[1],
+					key: change.new_val.id[2],
+					oldValue: undefined,
+					newValue: change.new_val.value
+				};
+				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
+				this.broker.emit('extensions-storage.change', data);
+				this.apiEventHandlers.emit('extensions-storage-change', data);
+			} else if (change.type === 'remove') {
+				const data = {
+					extensionId: change.old_val.id[0],
+					broadcaster: change.old_val.id[1],
+					key: change.old_val.id[2],
+					oldValue: change.old_val.value,
+					newValue: undefined
+				};
+				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
+				this.broker.emit('extensions-storage.change', data);
+				this.apiEventHandlers.emit('extensions-storage-change', data);
+			} else if (change.type === 'change') {
+				const data = {
+					extensionId: change.new_val.id[0],
+					broadcaster: change.new_val.id[1],
+					key: change.new_val.id[2],
+					oldValue: change.old_val.value,
+					newValue: change.new_val.value
+				};
+				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
+				this.broker.emit('extensions-storage.change', data);
+				this.apiEventHandlers.emit('extensions-storage-change', data);
+			}
+		});
+	},
   methods: {
     getBroadcasterVMs(broadcaster) {
       return this.vmsByBroadcaster[broadcaster] || (this.vmsByBroadcaster[broadcaster] = {});
@@ -135,12 +181,12 @@ module.exports = {
 
 			this.apiEventHandlers.emit('extract-account-activity-stop', { username });
 		},
-		'gallery-add'(payload) {
+		'gallery.add'(payload) {
 			const { file } = payload;
 
 			this.apiEventHandlers.emit('gallery-add', { file });
 		},
-		'gallery-remove'(payload) {
+		'gallery.remove'(payload) {
 			const { file } = payload;
 
 			this.apiEventHandlers.emit('gallery-remove', { file });
@@ -174,9 +220,7 @@ module.exports = {
 				}
 
 				if (forMe) {
-					this.apiEventHandlers.emit('event', {
-						id, broadcaster, sender, subject, data
-					});
+					this.apiEventHandlers.emit('event', { id, broadcaster, sender, subject, data });
 				}
 			}
 		},

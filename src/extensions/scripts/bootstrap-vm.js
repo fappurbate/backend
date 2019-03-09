@@ -127,6 +127,7 @@ global.fb = {
         api.cb.onExtractAccountActivityStart.addListener.applyIgnored(
           undefined, [new ivm.Reference(callback)]
         );
+        return global.fb.cb.onExtractAccountActivityStart;
       }
     },
     onExtractAccountActivityStop: {
@@ -134,6 +135,7 @@ global.fb = {
         api.cb.onExtractAccountActivityStop.addListener.applyIgnored(
           undefined, [new ivm.Reference(callback)]
         );
+        return global.fb.cb.onExtractAccountActivityStop;
       }
     },
     get isExtractingAccountActivity() {
@@ -145,13 +147,13 @@ global.fb = {
     onAdd: {
       addListener: callback => {
         api.gallery.onAdd.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.fb.gallery;
+        return global.fb.gallery.onAdd;
       }
     },
     onRemove: {
       addListener: callback => {
         api.gallery.onRemove.addListener.applyIgnored(undefined, [new ivm.Reference(callback)]);
-        return global.fb.gallery;
+        return global.fb.gallery.onRemove;
       }
     },
     playAudio: id => {
@@ -195,6 +197,14 @@ global.fb = {
     removeAll: () => new Promise((resolve, reject) =>
       api.storage.removeAll.applyIgnored(undefined, [
         new ivm.Reference((err, result) => err ? reject(objectToError(err)) : resolve(result))
-      ]))
+      ])),
+    onChanged: {
+      addListener: callback => {
+        api.storage.onChanged.addListener.applyIgnored(
+          undefined, [new ivm.Reference(callback)]
+        );
+        return api.storage.onChanged;
+      }
+    }
   }
 };
