@@ -141,7 +141,9 @@ module.exports = {
 								'tipper':                         'tippers.oneForBroadcaster',
 								'is-broadcasting':                'broadcasters.isBroadcasting',
 								'is-extracting-account-activity': 'broadcasters.isExtractingAccountActivity',
-								'extension-request':              'extensions.onRequest'
+								'extension-request':              'extensions.onRequest',
+								'extensions-storage-get':         'extensions.storageGet',
+								'extensions-storage-get-all':     'extensions.storageGetAll'
 							},
 							onBeforeCall: async function (ctx, socket, action, params, callOptions) {
 								ctx.meta.socket = socket;

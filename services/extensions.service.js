@@ -635,7 +635,7 @@ module.exports = {
 				broadcaster: 'string',
 				keys: { type: 'array', items: 'string' }
 			},
-			visibility: 'public',
+			visibility: 'published',
 			async handler(ctx) {
 				const { extensionId, broadcaster, keys } = ctx.params;
 
@@ -671,7 +671,7 @@ module.exports = {
 				extensionId: 'string',
 				broadcaster: 'string'
 			},
-			visibility: 'public',
+			visibility: 'published',
 			async handler(ctx) {
 				const { extensionId, broadcaster } = ctx.params;
 

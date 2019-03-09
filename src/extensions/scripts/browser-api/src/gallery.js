@@ -110,7 +110,8 @@ export default () => ({
       eventHandlers.addEventListener('gallery-add', event => {
         const { file } = event.detail;
         callback(file);
-      })
+      });
+      return this;
     }
   },
   onRemove: {
@@ -118,7 +119,8 @@ export default () => ({
       eventHandlers.addEventListener('gallery-remove', event => {
         const { file } = event.detail;
         callback(file);
-      })
+      });
+      return this;
     }
   },
   getThumbnail: (id, options = {}) => {

@@ -56,7 +56,8 @@ export default ({ id, name, version, broadcaster, init }) => {
         eventHandlers.addEventListener('message', event => {
           const { type, timestamp, data } = event.detail;
           callback(type, timestamp, data);
-        })
+        });
+        return this;
       }
     },
     onAccountActivity: {
@@ -64,17 +65,20 @@ export default ({ id, name, version, broadcaster, init }) => {
         eventHandlers.addEventListener('account-activity', event => {
           const { type, timestamp, data } = event.detail;
           callback(type, timestamp, data);
-        })
+        });
+        return this;
       }
     },
     onBroadcastStart: {
       addListener: callback => {
         eventHandlers.addEventListener('broadcast-start', () => callback());
+        return this;
       }
     },
     onBroadcastStop: {
       addListener: callback => {
         eventHandlers.addEventListener('broadcast-stop', () => callback());
+        return this;
       }
     },
     get isBroadcasting() {
@@ -83,11 +87,13 @@ export default ({ id, name, version, broadcaster, init }) => {
     onExtractAccountActivityStart: {
       addListener: callback => {
         eventHandlers.addEventListener('extract-account-activity-start', () => callback());
+        return this;
       }
     },
     onExtractAccountActivityStop: {
       addListener: callback => {
         eventHandlers.addEventListener('extract-account-activity-stop', () => callback());
+        return this;
       }
     },
     get isExtractingAccountActivity() {

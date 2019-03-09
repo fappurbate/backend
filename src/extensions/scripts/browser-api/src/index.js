@@ -3,6 +3,7 @@ import '@babel/polyfill';
 import cb from './chaturbate';
 import gallery from './gallery';
 import runtime from './runtime';
+import storage from './storage';
 import FappurbateError from './error';
 
 const nodes = {
@@ -31,6 +32,7 @@ window.fb = {
   cb: cb(data),
   gallery: gallery(data),
   runtime: runtime(data),
+  storage: storage(data),
   Error: FappurbateError
 };
 

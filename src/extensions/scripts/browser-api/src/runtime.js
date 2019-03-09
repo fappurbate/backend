@@ -47,6 +47,7 @@ export default ({ id, name, version, broadcaster }) => ({
         const { sender, data } = event.detail;
         callback(sender, data);
       });
+      return this;
     }
   },
   emitEvent: (receivers, subject, data) => {
