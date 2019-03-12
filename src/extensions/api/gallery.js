@@ -1,5 +1,4 @@
 const EventEmitter = require('events');
-const RequestTarget = require('@kothique/request-target');
 const ivm = require('isolated-vm');
 
 module.exports.createGalleryAPI = function createGalleryAPI(data) {
@@ -7,7 +6,6 @@ module.exports.createGalleryAPI = function createGalleryAPI(data) {
     callAction, emitEvent, events, requests } = data;
 
   const eventHandlers = new EventEmitter;
-  const requestHandlers = new RequestTarget;
 
   const meta = { events };
 

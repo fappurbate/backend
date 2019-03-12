@@ -43,6 +43,7 @@ module.exports = {
     this.vmsByBroadcaster = {};
 		this.apiEventHandlers = new EventEmitter;
 		this.apiRequestHandlers = new RequestTarget({
+			callAllHandlers: true,
 			byRequest: {
 				message: { getAllResults: true }
 			}
@@ -67,7 +68,7 @@ module.exports = {
 					broadcaster: change.new_val.id[1],
 					key: change.new_val.id[2],
 					oldValue: undefined,
-					newValue: change.new_val.value
+					newValue: msgpack.decode(change.new_val.value)
 				};
 				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
 				this.broker.emit('extensions-storage.change', data);
@@ -77,7 +78,7 @@ module.exports = {
 					extensionId: change.old_val.id[0],
 					broadcaster: change.old_val.id[1],
 					key: change.old_val.id[2],
-					oldValue: change.old_val.value,
+					oldValue: msgpack.decode(change.old_val.value),
 					newValue: undefined
 				};
 				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
@@ -88,8 +89,8 @@ module.exports = {
 					extensionId: change.new_val.id[0],
 					broadcaster: change.new_val.id[1],
 					key: change.new_val.id[2],
-					oldValue: change.old_val.value,
-					newValue: change.new_val.value
+					oldValue: msgpack.decode(change.old_val.value),
+					newValue: msgpack.decode(change.new_val.value)
 				};
 				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
 				this.broker.emit('extensions-storage.change', data);
@@ -209,7 +210,7 @@ module.exports = {
 				const index = receivers.indexOf('@main');
 				const forMe = index !== -1;
 				if (forMe) {
-					data.receivers.splice(index, 1);
+					receivers.splice(index, 1);
 				}
 
 				if (receivers.length > 0) {

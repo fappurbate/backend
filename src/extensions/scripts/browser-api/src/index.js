@@ -11,6 +11,7 @@ const nodes = {
   name: document.querySelector('meta[data-name="name"]'),
   version: document.querySelector('meta[data-name="version"]'),
   broadcaster: document.querySelector('meta[data-name="broadcaster"]'),
+  pageName: document.querySelector('meta[data-name="page-name"]'),
   initIsBroadcasting: document.querySelector('meta[data-name="init:is-broadcasting"]'),
   initIsExtractingAccountActivity: document.querySelector('meta[data-name="init:is-extracting-account-activity"]')
 };
@@ -20,6 +21,7 @@ const data = {
   name: nodes.name.getAttribute('data-content'),
   version: nodes.version ? nodes.version.getAttribute('data-content') : null,
   broadcaster: nodes.broadcaster.getAttribute('data-content'),
+  pageName: nodes.pageName.getAttribute('data-content'),
   init: {
     isBroadcasting: nodes.initIsBroadcasting.getAttribute('data-content'),
     isExtractingAccountActivity: nodes.initIsExtractingAccountActivity.getAttribute('data-content')

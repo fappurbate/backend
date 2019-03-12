@@ -4,7 +4,9 @@ import RequestTarget from '@kothique/request-target';
 const parent = window.parent;
 
 const eventHandlers = new EventTarget;
-const requestHandlers = new RequestTarget;
+const requestHandlers = new RequestTarget({
+  callAllHandlers: true
+});
 
 let nextRequestId = 0;
 const requests = {};
@@ -36,7 +38,7 @@ window.addEventListener('message', event => {
   }
 });
 
-export default ({ id, name, version, broadcaster }) => ({
+export default ({ id, name, version, broadcaster, pageName }) => ({
   id,
   name,
   version,
@@ -53,7 +55,12 @@ export default ({ id, name, version, broadcaster }) => ({
   emitEvent: (receivers, subject, data) => {
     parent.postMessage({
       subject: 'event',
-      data: { receivers, subject, data }
+      data: {
+        receivers,
+        subject,
+        data,
+        sender: pageName
+      }
     }, '*');
   },
   sendRequest: (subject, data) => {

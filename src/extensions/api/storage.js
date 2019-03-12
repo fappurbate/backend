@@ -18,8 +18,8 @@ module.exports.createStorageAPI = function createStorageAPI(data) {
 
     const { key, oldValue, newValue } = payload;
     eventHandlers.emit('change', key, {
-      oldValue: oldValue ? msgpack.decode(oldValue) : undefined,
-      newValue: newValue ? msgpack.decode(newValue) : undefined
+      oldValue: oldValue,
+      newValue: newValue
     });
   });
 

@@ -7,7 +7,9 @@ module.exports.createRuntimeAPI = function createRuntimeAPI(data) {
     callAction, emitEvent, events, requests } = data;
 
   const eventHandlers = new EventEmitter;
-  const requestHandlers = new RequestTarget;
+  const requestHandlers = new RequestTarget({
+    callAllHandlers: true
+  });
 
   const meta = { events, requests };
 
