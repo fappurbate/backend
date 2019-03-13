@@ -1,7 +1,7 @@
 'use strict';
 
-const ParamsValidator = require('./src/params-validator');
-const MsgPackLiteSerializer = require('./src/msgpack-lite-serializer');
+const ParamsValidator = require('./common/params-validator');
+const MsgPackLiteSerializer = require('./common/msgpack-lite-serializer');
 
 module.exports = {
 	// Namespace of nodes to segment your nodes on the same network.

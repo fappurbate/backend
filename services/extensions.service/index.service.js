@@ -11,10 +11,10 @@ const RequestTarget = require('@kothique/request-target');
 const EventEmitter = require('events');
 const msgpack = require('msgpack-lite');
 
-const { createLogger } = require('../src/extensions/logger');
-const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('../src/extensions/util');
-const { readManifest } = require('../src/extensions/manifest');
-const { VM } = require('../src/extensions/vm');
+const { createLogger } = require('./logger');
+const { loadExtensionFile, tryLoadExtensionFile, extractPackage } = require('./util');
+const { readManifest } = require('./manifest');
+const { VM } = require('./vm');
 
 const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
 
@@ -26,7 +26,8 @@ module.exports = {
 	},
 	rInitial: {
 		fappurbate: {
-			extensions_storage: true
+			extensions_storage: true,
+			extensions: { $default: true }
 		}
 	},
 	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),

@@ -7,7 +7,7 @@ const fileType = require('file-type');
 const { Readable } = require('stream');
 const RService = require('@kothique/moleculer-rethinkdbdash');
 
-const { streamToBuffer } = require('../src/util.js');
+const { streamToBuffer } = require('../common/util.js');
 
 module.exports = {
   name: 'gallery',
