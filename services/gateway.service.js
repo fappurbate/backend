@@ -31,6 +31,8 @@ module.exports = {
 			mappingPolicy: 'restrict',
 			aliases: {
 				'GET    broadcasters':                                               'broadcasters.getAll',
+				'POST   broadcasters':                                               'broadcasters.add',
+				'DELETE broadcaster/:broadcaster':                                   'broadcasters.remove',
 				'GET    broadcaster/:broadcaster/tippers':                           'tippers.forBroadcaster',
 				'GET    broadcaster/:broadcaster/translations':                      'translationRequests.forBroadcaster',
 				'GET    broadcaster/:broadcaster/extensions':                        'extensions.forBroadcaster',

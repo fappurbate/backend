@@ -50,9 +50,9 @@ module.exports = {
 		const cursor = await this.r.table('extensions_storage').changes({
 			includeTypes: true
 		});
-		cursor.each(async (err, change) => {
-			if (err) {
-				this.logger.warn(`Error while listening to changes in the 'extensions_storage' table.`);
+		cursor.each(async (error, change) => {
+			if (error) {
+				this.logger.warn(`Error while listening to changes in the 'extensions_storage' table.`, { error });
 				return;
 			}
 

@@ -1,5 +1,6 @@
 'use strict';
 
+const { MoleculerClientError } = require('moleculer').Errors;
 const RService = require('@kothique/moleculer-rethinkdbdash');
 
 module.exports = {
@@ -12,11 +13,30 @@ module.exports = {
 		fappurbate: {
 			broadcasters: {
 				$default: true,
-				$options: {
-					primaryKey: 'username'
-				}
+				$options: { primaryKey: 'username' }
 			}
 		}
+	},
+	async rOnReady() {
+		const cursor = await this.rTable.changes({
+			includeTypes: true
+		});
+		cursor.each(async (error, change) => {
+			if (error) {
+				this.logger.warn(`Error while listening to changes in the 'broadcasters' table`, { error });
+				return;
+			}
+
+			if (change.type === 'add') {
+				const data = { username: change.new_val.username };
+				await this.broker.call('gateway.app.broadcast', { subject: 'broadcasters-add', data });
+				this.broker.emit('broadcasters.add', data);
+			} else if (change.type === 'remove') {
+				const data = { username: change.old_val.username };
+				await this.broker.call('gateway.app.broadcast', { subject: 'broadcasters-remove', data });
+				this.broker.emit('broadcasters.remove', data);
+			}
+		});
 	},
 	created() {
 		this.online = {};
@@ -199,7 +219,36 @@ module.exports = {
 		getAll: {
 			visibility: 'published',
 			async handler(ctx) {
-				return await this.rTable;
+				return await this.rTable.orderBy(this.r.asc('username'));
+			}
+		},
+		add: {
+			params: {
+				username: 'string'
+			},
+			visibility: 'published',
+			async handler(ctx) {
+				const { username } = ctx.params;
+
+				if (await this.rTable.get(username)) {
+					throw new MoleculerClientError('Broadcaster already exists.', 422, 'ERR_ALREADY_EXISTS');
+				}
+
+				await this.rTable.insert({ username });
+			}
+		},
+		remove: {
+			params: {
+				broadcaster: 'string'
+			},
+			visibility: 'published',
+			async handler(ctx) {
+				const { broadcaster } = ctx.params;
+
+				const { deleted } = await this.rTable.get(broadcaster).delete();
+				if (deleted === 0) {
+					throw new MoleculerClientError('Broadcaster does not exist.', 404, 'ERR_NOT_FOUND');
+				}
 			}
 		},
 		ensureExists: {
