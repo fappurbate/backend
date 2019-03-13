@@ -1,20 +1,22 @@
 'use strict';
 
-const DbService = require('moleculer-db');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
-
-const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
+const RService = require('@kothique/moleculer-rethinkdbdash');
 
 module.exports = {
 	name: 'tippers',
-  mixins: [DbService],
-	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
-	collection: 'tippers',
-	settings: {
-    fields: ['_id', 'username', 'tipInfo'],
-    pageSize: 50,
-    maxPageSize: 200,
-    maxLimit: -1
+  mixins: [RService],
+	rOptions: {
+		db: 'fappurbate'
+	},
+	rInitial: {
+		fappurbate: {
+			tippers: {
+				$default: true,
+				$options: {
+					primaryKey: 'username'
+				}
+			}
+		}
 	},
   actions: {
     addTip: {
@@ -31,32 +33,50 @@ module.exports = {
 
 				await ctx.call('broadcasters.ensureExists', { broadcaster });
 
-        await this.adapter.collection.findOneAndUpdate({ username }, {
-          $inc: { [`tipInfo.${broadcaster}`]: amount }
-        }, { upsert: true });
+				await this.rTable.insert({
+					username,
+					tipInfo: {
+						[broadcaster]: amount
+					}
+				}, {
+					conflict: (username, oldDoc, newDoc) => {
+						const tipInfo = oldDoc('tipInfo');
+						return oldDoc.merge({
+							tipInfo: tipInfo.merge({
+								[broadcaster]: this.r.branch(tipInfo.hasFields(broadcaster), tipInfo(broadcaster), 0).add(amount)
+							})
+						});
+					}
+				});
       }
     },
     forBroadcaster: {
       params: {
-        broadcaster: 'string'
+        broadcaster: 'string',
+				lastId: { type: 'string', optional: true },
+				limit: { type: 'number', optional: true, integer: true, convert: true }
       },
       visibility: 'published',
       async handler(ctx) {
-        const { broadcaster } = ctx.params;
+        const { broadcaster, lastId } = ctx.params;
+				const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
-        const result = await ctx.call('tippers.list', {
-					...ctx.params,
-					query: {
-	          [`tipInfo.${broadcaster}`]: { $exists: true }
-					}
-        });
+				let query = this.rTable
+					.between(lastId || this.r.minval, this.r.maxval, { leftBound: 'open' })
+					.orderBy(this.r.asc('username'))
+					.filter(this.r.row('tipInfo').hasFields(broadcaster));
 
-        result.rows.forEach(tipper => {
-          tipper.amount = tipper.tipInfo[broadcaster];
-          delete tipper.tipInfo;
-        });
+				if (typeof limit !== 'undefined') {
+					query = query.limit(limit);
+				}
 
-        return result;
+				query = query.map(tipper =>
+					tipper.merge({
+						amount: tipper('tipInfo')(broadcaster)
+					}).without('tipInfo')
+				);
+
+				return await query;
       }
     },
 		oneForBroadcaster: {
@@ -68,18 +88,16 @@ module.exports = {
 			async handler(ctx) {
 				const { username, broadcaster } = ctx.params;
 
-				const tipper = await this.adapter.findOne({ username });
-				if (tipper) {
-					tipper.amount = tipper.tipInfo[broadcaster] || 0;
-					delete tipper.tipInfo;
+				return await this.rTable.get(username).do(tipper => {
+					if (tipper && tipper('tipInfo')(broadcaster)) {
+						return {
+							username,
+							amount: tipper('tipInfo')(broadcaster)
+						};
+					}
 
-					return tipper;
-				} else {
-					return {
-						username,
-						amount: 0
-					};
-				}
+					return { username, amount: 0 };
+				});
 			}
 		}
   }

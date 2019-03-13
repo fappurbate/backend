@@ -10,6 +10,7 @@ module.exports = {
         timestamp: 'string',
         data: 'object'
       },
+      visibility: 'published',
       async handler(ctx) {
         const { username, type, timestamp, data } = ctx.params;
 
