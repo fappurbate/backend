@@ -1,20 +1,22 @@
 'use strict';
 
-const DbService = require('moleculer-db');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
-
-const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
+const RService = require('@kothique/moleculer-rethinkdbdash');
 
 module.exports = {
 	name: 'broadcasters',
-  mixins: [DbService],
-	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
-	collection: 'broadcasters',
-	settings: {
-    fields: ['_id', 'username'],
-    pageSize: 50,
-    maxPageSize: 200,
-    maxLimit: -1,
+  mixins: [RService],
+	rOptions: {
+		db: 'fappurbate'
+	},
+	rInitial: {
+		fappurbate: {
+			broadcasters: {
+				$default: true,
+				$options: {
+					primaryKey: 'username'
+				}
+			}
+		}
 	},
 	created() {
 		this.online = {};
@@ -194,6 +196,12 @@ module.exports = {
 				));
 			}
 		},
+		getAll: {
+			visibility: 'published',
+			async handler(ctx) {
+				return await this.rTable;
+			}
+		},
 		ensureExists: {
 			params: {
 				broadcaster: 'string'
@@ -202,15 +210,10 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster } = ctx.params;
 
-				await this.adapter.collection.findOneAndUpdate(
-					{ username: broadcaster },
-					{ $set: { username: broadcaster } },
-					{ upsert: true }
-				);
+				await this.rTable.get(broadcaster).replace({
+					username: broadcaster
+				});
 			}
 		}
-	},
-	afterConnected() {
-		this.logger.info('Connected successfully.');
 	}
 };

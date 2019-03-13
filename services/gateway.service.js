@@ -30,7 +30,7 @@ module.exports = {
 			path: '/api',
 			mappingPolicy: 'restrict',
 			aliases: {
-				'GET    broadcasters':                                               'broadcasters.list',
+				'GET    broadcasters':                                               'broadcasters.getAll',
 				'GET    broadcaster/:broadcaster/tippers':                           'tippers.forBroadcaster',
 				'GET    broadcaster/:broadcaster/translations':                      'translationRequests.forBroadcaster',
 				'GET    broadcaster/:broadcaster/extensions':                        'extensions.forBroadcaster',
