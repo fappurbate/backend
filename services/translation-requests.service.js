@@ -1,34 +1,45 @@
 'use strict';
 
-const DbService = require('moleculer-db');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
-
-const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate';
+const RService = require('@kothique/moleculer-rethinkdbdash');
 
 module.exports = {
 	name: 'translationRequests',
-  mixins: [DbService],
-	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
-	collection: 'translationRequests',
-	settings: {
-    fields: ['_id', 'broadcaster', 'tabId', 'msgId', 'content', 'createdAt'],
-    pageSize: 50,
-    maxPageSize: 200,
-    maxLimit: -1
+  mixins: [RService],
+	rOptions: {
+		db: 'fappurbate'
 	},
+	rInitial: r => ({
+		fappurbate: {
+			translation_requests: {
+				$default: true,
+				tabid_msgid: {
+					$function: [r.row('tabId'), r.row('msgId')]
+				}
+			}
+		}
+	}),
   actions: {
     forBroadcaster: {
       params: {
-        broadcaster: 'string'
+        broadcaster: 'string',
+				lastId: { type: 'string', optional: true },
+				limit: { type: 'number', optional: true, integer: true, convert: true }
       },
       visibility: 'published',
       async handler(ctx) {
-        const { broadcaster } = ctx.params;
+				const { broadcaster, lastId } = ctx.params;
+				const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
-        return ctx.call('translationRequests.list', {
-          ...ctx.params,
-          query: { broadcaster }
-        });
+				let query = this.rTable
+					.between(this.r.minval, lastId || this.r.maxval, { leftBound: 'open' })
+					.orderBy(this.r.desc('id'))
+					.filter(this.r.row('broadcaster').eq(broadcaster))
+
+				if (typeof limit !== 'undefined') {
+					query = query.limit(limit);
+				}
+
+				return await query;
       }
     },
 		request: {
@@ -49,12 +60,12 @@ module.exports = {
 					data: { broadcaster, tabId, msgId, content }
 				});
 
-				await this.adapter.collection.insertOne({
+				await this.rTable.insert({
 					broadcaster,
 					tabId,
 					msgId,
 					content,
-					createdAt: new Date()
+					createdAt: new Date
 				});
 			}
 		},
@@ -74,7 +85,7 @@ module.exports = {
 					data: { tabId, msgId }
 				});
 
-				await this.adapter.collection.deleteMany({ tabId, msgId });
+				await this.rTable.getAll([tabId, msgId], { index: 'tabid_msgid' }).delete();
 			}
 		},
 		resolve: {
@@ -94,7 +105,7 @@ module.exports = {
 					data: { tabId, msgId, content }
 				});
 
-				await this.adapter.collection.deleteMany({ tabId, msgId });
+				await this.rTable.getAll([tabId, msgId], { index: 'tabid_msgid' }).delete();
 			}
 		}
   }
