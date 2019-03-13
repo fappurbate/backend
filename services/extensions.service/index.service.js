@@ -2,7 +2,6 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const { ObjectId } = require('bson');
 const RService = require('@kothique/moleculer-rethinkdbdash');
 const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 const RequestTarget = require('@kothique/request-target');

@@ -53,8 +53,6 @@
     "http-range": "^1.0.0",
     "isolated-vm": "^1.7.9",
     "moleculer": "^0.13.0",
-    "moleculer-db": "^0.7.7",
-    "moleculer-db-adapter-mongo": "^0.4.2",
     "moleculer-io": "^1.0.2",
     "moleculer-web": "^0.8.0",
     "msgpack-lite": "^0.1.26",
