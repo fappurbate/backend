@@ -20,9 +20,36 @@ module.exports.createLogger = function createVMLogger(options) {
 
   transports.on('logged', info => onLogged && setImmediate(() => onLogged(info)));
 
-  return createWinston({
+  const logger = createWinston({
     format: getFormat({ timestamp: false }),
     transports,
     level: 'silly'
   });
+
+  const queue = [];
+  let logging = false;
+
+  async function logQueue() {
+    if (logging) { return; }
+    logging = true;
+
+    while (queue.length > 0) {
+      const { method, args } = queue.shift();
+
+      method.apply(logger, args);
+      await new Promise(resolve => transports.once('logged', resolve));
+    }
+
+    logging = false;
+  }
+
+  ['error', 'warn', 'info', 'verbose', 'debug', 'silly'].forEach(level => {
+    const method = logger[level];
+    logger[level] = function (...args) {
+      queue.push({ method, arg });
+      logQueue();
+    };
+  });
+
+  return logger;
 }
