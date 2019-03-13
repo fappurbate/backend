@@ -31,9 +31,9 @@ module.exports = {
 				const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
 				let query = this.rTable
-					.between(this.r.minval, lastId || this.r.maxval, { leftBound: 'open' })
+					.between(this.r.minval, lastId || this.r.maxval)
 					.orderBy(this.r.desc('id'))
-					.filter(this.r.row('broadcaster').eq(broadcaster))
+					.filter(this.r.row('broadcaster').eq(broadcaster));
 
 				if (typeof limit !== 'undefined') {
 					query = query.limit(limit);

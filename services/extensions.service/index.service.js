@@ -3,9 +3,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { ObjectId } = require('bson');
-const DbService = require('moleculer-db');
 const RService = require('@kothique/moleculer-rethinkdbdash');
-const MongoDBAdapter = require('moleculer-db-adapter-mongo');
 const { MoleculerError, MoleculerClientError } = require('moleculer').Errors;
 const RequestTarget = require('@kothique/request-target');
 const EventEmitter = require('events');
@@ -20,24 +18,20 @@ const mongoUrl = process.env.MONGO_URL || 'mongodb://localhost:27017/fappurbate'
 
 module.exports = {
 	name: 'extensions',
-  mixins: [DbService, RService],
+  mixins: [RService],
 	rOptions: {
 		db: 'fappurbate'
 	},
 	rInitial: {
 		fappurbate: {
 			extensions_storage: true,
-			extensions: { $default: true }
+			extensions: {
+				$default: true,
+				name: true
+			}
 		}
 	},
-	adapter: new MongoDBAdapter(mongoUrl, { useNewUrlParser: true }),
-	collection: 'extensions',
 	settings: {
-    fields: ['_id', 'name', 'version', 'description', 'mainScript', 'pages'],
-    pageSize: 50,
-    maxPageSize: 200,
-    maxLimit: -1,
-
     path: 'extensions'
 	},
   async created() {
@@ -317,16 +311,15 @@ module.exports = {
           )));
         }
 
-        const { ops: [extension] } = await this.adapter.collection.insertOne({
-					...manifest,
-          createdAt: new Date
-        });
+				const { changes: [{ new_val: extension }]} = await this.rTable.insert({
+					...manifest
+				}, { returnChanges: true });
 
-        const newExtensionPath = path.join(this.settings.path, extension._id.toString());
+        const newExtensionPath = path.join(this.settings.path, extension.id);
         try {
           await fs.move(extensionPath, newExtensionPath);
         } catch (error) {
-          await db.extensions.delete({ _id: extension._id });
+					await this.rTable.get(extension.id).delete();
           throw new MoleculerError('Failed to install extension.', 500, 'ERR_INSTALL_EXTENSION', { error });
           this.logger.error(`Couldn't move extension from ${extensionPath} to ${newExtensionPath}.`);
         }
@@ -338,7 +331,7 @@ module.exports = {
           }
         });
 
-        return extension._id.toString();
+        return extension.id;
       }
     },
     uninstall: {
@@ -349,14 +342,14 @@ module.exports = {
       async handler(ctx) {
         const { extensionId } = ctx.params;
 
-        const extension = await this.adapter.findById(extensionId);
+        const extension = await this.rTable.get(extensionId);
         if (!extension) {
           throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
         }
 
         for (const broadcaster in this.vmsByBroadcaster) {
           for (const id in this.getBroadcasterVMs(broadcaster)) {
-            if (extensionId === extension._id.toString()) {
+            if (extensionId === extension.id) {
               try {
 								await this.actions.stop({ extensionId, broadcaster });
               } catch (error) {
@@ -367,9 +360,9 @@ module.exports = {
         }
 
 				await this.actions.clearStorage({ extensionId });
-				await this.adapter.collection.deleteOne({ _id: extension._id });
+				await this.rTable.get(extensionId).delete();
 
-				await fs.remove(path.join(this.settings.path, extension._id.toString()));
+				await fs.remove(path.join(this.settings.path, extension.id));
 
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'extension-remove',
@@ -386,14 +379,16 @@ module.exports = {
 			async handler(ctx) {
 				const { extensionId, broadcaster } = ctx.params;
 
-				const extension = await this.adapter.findById(extensionId);
+				const extension = await this.rTable.get(extensionId);
 				if (!extension) {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
 
-				const extensionPath = path.join(this.settings.path, extension._id.toString());
+				const extensionPath = path.join(this.settings.path, extension.id);
 
 				const vms = this.getBroadcasterVMs(broadcaster);
+
+				if (vms[extension.id]) { return; } // Already running
 
 				const vm = new VM({
 					extension,
@@ -416,11 +411,11 @@ module.exports = {
 					});
 				});
 
-				this.logger.info(`Starting extension ${extension.name} (${extension._id.toString()})...`);
+				this.logger.info(`Starting extension ${extension.name} (${extension.id})...`);
 				await vm.start();
 
-				const vmInfo = vms[extension._id.toString()] = {
-					id: extension._id.toString(),
+				const vmInfo = vms[extension.id] = {
+					id: extension.id,
 					vm
 				};
 
@@ -439,24 +434,22 @@ module.exports = {
 			async handler(ctx) {
 				const { extensionId, broadcaster } = ctx.params;
 
-				const extension = await this.adapter.findById(extensionId);
+				const extension = await this.rTable.get(extensionId);
 				if (!extension) {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
 
-				const extensionPath = path.join(this.settings.path, extension._id.toString());
+				const extensionPath = path.join(this.settings.path, extension.id);
 
 				const vms = this.getBroadcasterVMs(broadcaster);
 
-				const vmInfo = vms[extension._id.toString()];
-				if (!vmInfo) {
-					throw new MoleculerClientError('Failed to stop an extension which is not running.', 400, 'ERR_EXTENSION_ALREADY_STOPPED', { extensionId, broadcaster });
-				}
+				const vmInfo = vms[extension.id];
+				if (!vmInfo) { return; } // Already not running
 
-				this.logger.info(`Shutting down extension ${extension.name} (${extension._id.toString()})...`);
+				this.logger.info(`Shutting down extension ${extension.name} (${extension.id})...`);
 				await vmInfo.vm.dispose();
-				delete vms[extension._id.toString()];
-				this.logger.info(`Extension ${extension.name} (${extension._id.toString()}) is shut down.`);
+				delete vms[extension.id];
+				this.logger.info(`Extension ${extension.name} (${extension.id}) is shut down.`);
 
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'extension-stop',
@@ -466,23 +459,29 @@ module.exports = {
 		},
 		forBroadcaster: {
 			params: {
-				broadcaster: 'string'
+				broadcaster: 'string',
+				lastId: { type: 'string', optional: true },
+				limit: { type: 'number', optional: true, integer: true, convert: true }
 			},
 			visibility: 'published',
 			async handler(ctx) {
-				const { broadcaster } = ctx.params;
+				const { broadcaster, lastId } = ctx.params;
+				const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
-				const extensions = await ctx.call('extensions.list', {
-					...ctx.params,
-					sort: '-createdAt'
-				});
+				let query = this.rTable
+					.between(this.r.minval, lastId || this.r.maxval, { index: 'name', leftBound: 'open' })
+					.orderBy(this.r.asc('name'));
+
+				if (typeof limit !== 'undefined') {
+					query = query.limit(limit);
+				}
 
 				const vms = this.getBroadcasterVMs(broadcaster);
-				extensions.rows.forEach(extension => {
-					extension.running = extension._id.toString() in vms;
-				});
 
-				return extensions;
+				return await query.then(extensions => extensions.map(extension => ({
+					...extension,
+					running: extension.id in vms
+				})));
 			}
 		},
 		oneForBroadcaster: {
@@ -494,13 +493,13 @@ module.exports = {
 			async handler(ctx) {
 				const { extensionId, broadcaster } = ctx.params;
 
-				const extension = await this.adapter.findById(extensionId);
+				const extension = await this.rTable.get(extensionId);
 				if (!extension) {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
 
 				const vms = this.getBroadcasterVMs(broadcaster);
-				extension.running = extension._id.toString() in vms;
+				extension.running = extension.id in vms;
 
 				return extension;
 			}
@@ -515,13 +514,13 @@ module.exports = {
 			async handler(ctx) {
 				const { extensionId, broadcaster, rows } = ctx.params;
 
-				const extension = await this.adapter.findById(extensionId);
+				const extension = await this.rTable.get(extensionId);
 				if (!extension) {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
 
 				const vms = this.getBroadcasterVMs(broadcaster);
-				const vmInfo = vms[extension._id.toString()];
+				const vmInfo = vms[extension.id];
 
 				const logger = vmInfo ? vmInfo.vm.logger : createLogger({
 					extensionId,
@@ -545,17 +544,17 @@ module.exports = {
 			async handler(ctx) {
 				const { extensionId, broadcaster, page } = ctx.params;
 
-				const extension = await this.adapter.findById(extensionId);
+				const extension = await this.rTable.get(extensionId);
 				if (!extension) {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
 
 				const vms = this.getBroadcasterVMs(broadcaster);
-				const vmInfo = vms[extension._id.toString()];
+				const vmInfo = vms[extension.id];
 
 				if (!vmInfo) {
 					const notRunningPage = await fs.readFile(
-						path.join(__dirname, '..', 'src', 'extensions', 'pages', 'not-running.html'),
+						path.join(__dirname, 'pages', 'not-running.html'),
 						{ encoding: 'utf8' }
 					);
 					return notRunningPage;
@@ -597,7 +596,7 @@ module.exports = {
 			async handler(ctx) {
 				const { extensionId, broadcaster } = ctx.params;
 
-				const extension = await this.adapter.findById(extensionId);
+				const extension = await this.rTable.get(extensionId);
 				if (!extension) {
 					throw new MoleculerError('Extension not found.', 404, 'ERR_EXTENSION_NOT_FOUND', { extensionId });
 				}
