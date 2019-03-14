@@ -46,5 +46,5 @@ jspm_packages/
 .env
 
 /extensions/
-/services/extensions/scripts/browser-api/dist/
+/services/extensions.service/scripts/browser-api/dist/
 rethinkdb_data/

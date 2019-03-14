@@ -2,9 +2,9 @@ const path = require('path');
 
 module.exports = {
   mode: 'development',
-  entry: './services/extensions/scripts/browser-api/src/index.js',
+  entry: './services/extensions.service/scripts/browser-api/src/index.js',
   output: {
-    path: path.join(__dirname, 'src', 'extensions', 'scripts', 'browser-api', 'dist'),
+    path: path.join(__dirname, 'services', 'extensions.service', 'scripts', 'browser-api', 'dist'),
     filename: 'browser-api.js'
   },
   module: {
