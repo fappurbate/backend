@@ -30,17 +30,23 @@ module.exports = {
     fappurbate: {
       gallery: {
         $default: true,
-        type_id: { $function: [r.row('type'), r.row('id')] },
-        filename: true
+        filename: true,
+        type_created_at: { $function : [r.row('type'), r.row('createdAt')] }
       }
     }
   }),
   async rOnReady() {
+    this.lastId = {
+      image: await this.getLastId('image'),
+      audio: await this.getLastId('audio')
+    };
+
     const cursor = await this.rTable.pluck([
       'id',
       'type',
       'filename',
-      'mime'
+      'mime',
+      'createdAt'
     ]).changes({
       includeTypes: true
     });
@@ -51,6 +57,8 @@ module.exports = {
       }
 
       if (change.type === 'add') {
+        this.lastId[change.new_val.type] = change.new_val.createdAt;
+
         await this.broker.call('gateway.app.broadcast', {
           subject: 'gallery-add',
           data: {
@@ -59,6 +67,10 @@ module.exports = {
         });
         this.broker.emit('gallery.add', { file: change.new_val });
       } else if (change.type === 'remove') {
+        if (this.lastId.image && change.old_val.createdAt.valueOf() === this.lastId.image.valueOf()) {
+          this.lastId.image = await this.getLastId('image');
+        }
+
         await this.broker.call('gateway.app.broadcast', {
           subject: 'gallery-remove',
           data: {
@@ -106,6 +118,13 @@ module.exports = {
       })
       .png()
       .toBuffer();
+    },
+    getLastId(type) {
+      return this.rTable
+        .between([type, this.r.minval], [type, this.r.maxval], { index: 'type_created_at' })
+        .orderBy({ index: this.r.desc('type_created_at') })
+        .limit(1).getField('createdAt')
+        .nth(0).default(null);
     }
   },
   actions: {
@@ -130,6 +149,7 @@ module.exports = {
           throw new MoleculerClientError('The file provided is not audio.', 422, 'ERR_INVALID_FILE');
         }
 
+        const createdAt = new Date;
         const { generated_keys: [id] } = await this.rTable.insert({
           type,
           filename: (() => {
@@ -144,7 +164,8 @@ module.exports = {
           ...type === 'image' && {
             thumbnails: await this.generateThumbnails(buffer),
             preview: await this.generatePreview(buffer)
-          }
+          },
+          createdAt
         });
 
         return id;
@@ -216,7 +237,7 @@ module.exports = {
       },
       visibility: 'published',
       async handler(ctx) {
-        const { lastId } = ctx.params;
+        const lastId = ctx.params.lastId && new Date(ctx.params.lastId);
         const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
         const thumbnails = (field => {
           if (!field || field === 'true') {
@@ -228,10 +249,12 @@ module.exports = {
           }
         })(ctx.params.thumbnails);
 
-        let query = this.rTable.between(['image', lastId || this.r.minval], ['image', this.r.maxval], {
-          index: 'type_id',
-          leftBound: 'open'
-        });
+        let query = this.rTable
+          .between(['image', lastId || this.r.minval], ['image', this.r.maxval], {
+            index: 'type_created_at',
+            leftBound: 'open'
+          })
+          .orderBy({ index: this.r.asc('type_created_at') });
         if (typeof limit !== 'undefined') {
           query = query.limit(limit);
         }
@@ -240,21 +263,25 @@ module.exports = {
             'id',
             'filename',
             'mime',
-            ...thumbnails ? [{ thumbnails }] : []
-          ])
-          .orderBy(this.r.desc('id'));
+            ...thumbnails ? [{ thumbnails }] : [],
+            'createdAt'
+          ]);
 
-        const docs = await query;
+        const items = await query;
 
         if (thumbnails) {
-          docs.forEach(doc => {
-            const buffer = doc.thumbnails[thumbnails];
-            delete doc.thumbnails;
-            doc.thumbnail = buffer.toString('base64');
+          items.forEach(item => {
+            const buffer = item.thumbnails[thumbnails];
+            delete item.thumbnails;
+            item.thumbnail = buffer.toString('base64');
           });
         }
 
-        return docs;
+        if (items.length === 0 || items[items.length - 1].createdAt.valueOf() === this.lastId.image.valueOf()) {
+          return { items, all: true };
+        } else {
+          return { items, all: false };
+        }
       }
     },
     getThumbnail: {
@@ -301,22 +328,28 @@ module.exports = {
       },
       visibility: 'published',
       async handler(ctx) {
-        const { lastId } = ctx.params;
+        const lastId = ctx.params.lastId && new Date(ctx.params.lastId);
         const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
-        let query = this.rTable.between(['audio', lastId || this.r.minval], ['audio', this.r.maxval], {
-          index: 'type_id',
-          leftBound: 'open'
-        });
+        let query = this.rTable
+          .between(['audio', lastId || this.r.minval], ['audio', this.r.maxval], {
+            index: 'type_created_at',
+            leftBound: 'open'
+          })
+          .orderBy({ index: this.r.asc('type_created_at') });
         if (typeof limit !== 'undefined') {
           query = query.limit(limit);
         }
         query = query
-          .pluck(['id', 'filename', 'mime'])
-          .orderBy(this.r.desc('id'));
+          .pluck(['id', 'filename', 'mime', 'createdAt']);
 
-        const docs = await query;
-        return docs;
+        const items = await query;
+
+        if (items.length === 0 || items[items.length - 1].createdAt.valueOf() === this.lastId.audio.valueOf()) {
+          return { items, all: true };
+        } else {
+          return { items, all: false };
+        }
       }
     }
   }
