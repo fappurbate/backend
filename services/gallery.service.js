@@ -31,7 +31,7 @@ module.exports = {
       gallery: {
         $default: true,
         filename: true,
-        type_created_at: { $function : [r.row('type'), r.row('createdAt')] }
+        type_createdAt: { $function : [r.row('type'), r.row('createdAt')] }
       }
     }
   }),
@@ -121,8 +121,8 @@ module.exports = {
     },
     getLastId(type) {
       return this.rTable
-        .between([type, this.r.minval], [type, this.r.maxval], { index: 'type_created_at' })
-        .orderBy({ index: this.r.desc('type_created_at') })
+        .between([type, this.r.minval], [type, this.r.maxval], { index: 'type_createdAt' })
+        .orderBy({ index: this.r.asc('type_createdAt') })
         .limit(1).getField('createdAt')
         .nth(0).default(null);
     }
@@ -250,11 +250,11 @@ module.exports = {
         })(ctx.params.thumbnails);
 
         let query = this.rTable
-          .between(['image', lastId || this.r.minval], ['image', this.r.maxval], {
-            index: 'type_created_at',
-            leftBound: 'open'
+          .between(['image', this.r.minval], ['image', lastId || this.r.maxval], {
+            index: 'type_createdAt',
+            rightBound: 'open'
           })
-          .orderBy({ index: this.r.asc('type_created_at') });
+          .orderBy({ index: this.r.desc('type_createdAt') });
         if (typeof limit !== 'undefined') {
           query = query.limit(limit);
         }
@@ -332,11 +332,11 @@ module.exports = {
         const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
         let query = this.rTable
-          .between(['audio', lastId || this.r.minval], ['audio', this.r.maxval], {
-            index: 'type_created_at',
-            leftBound: 'open'
+          .between(['audio', this.r.minval], ['audio', lastId || this.r.maxval], {
+            index: 'type_createdAt',
+            rightBound: 'open'
           })
-          .orderBy({ index: this.r.asc('type_created_at') });
+          .orderBy({ index: this.r.desc('type_createdAt') });
         if (typeof limit !== 'undefined') {
           query = query.limit(limit);
         }
