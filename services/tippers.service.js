@@ -22,9 +22,9 @@ module.exports = {
 		this.lastId = await this.getLastId();
 
 		const cursor = await this.rTable.changes({ includeTypes: true });
-		cursor.each(async (err, change) => {
-			if (err) {
-				this.logger.warn(`Error while listening to changes in the 'tippers' table.`);
+		cursor.each(async (error, change) => {
+			if (error) {
+				this.logger.warn(`Error while listening to changes in the 'tippers' table.`, { error });
 				return;
 			}
 

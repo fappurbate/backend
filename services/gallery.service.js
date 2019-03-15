@@ -50,9 +50,9 @@ module.exports = {
     ]).changes({
       includeTypes: true
     });
-    cursor.each(async (err, change) => {
-      if (err) {
-        this.logger.warn(`Error while listening to changes in the 'gallery' table.`);
+    cursor.each(async (error, change) => {
+      if (error) {
+        this.logger.warn(`Error while listening to changes in the 'gallery' table.`, { error });
         return;
       }
 

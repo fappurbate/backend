@@ -12,12 +12,35 @@ module.exports = {
 		fappurbate: {
 			translation_requests: {
 				$default: true,
-				tabid_msgid: {
-					$function: [r.row('tabId'), r.row('msgId')]
-				}
+				tabid_msgid: { $function: [r.row('tabId'), r.row('msgId')] },
+				createdAt: true
 			}
 		}
 	}),
+	async rOnReady() {
+		this.lastId = await this.getLastId();
+
+		const cursor = await this.rTable.changes({ includeTypes: true });
+		cursor.each(async (error, change) => {
+			if (error) {
+				this.logger.warn(`Error while listening to changes in the 'translation_requests' table.`, { error });
+				return;
+			}
+
+			if (change.type === 'remove') {
+				if (this.lastId && change.old_val.createdAt.valueOf() === this.lastId.valueOf()) {
+					this.lastId = await this.getLastId();
+				}
+			}
+		});
+	},
+	methods: {
+		getLastId() {
+			return this.rTable
+				.orderBy({ index: this.r.asc('createdAt') })
+				.limit(1).getField('createdAt').nth(0).default(null);
+		}
+	},
   actions: {
     forBroadcaster: {
       params: {
@@ -27,19 +50,29 @@ module.exports = {
       },
       visibility: 'published',
       async handler(ctx) {
-				const { broadcaster, lastId } = ctx.params;
+				const { broadcaster } = ctx.params;
+				const lastId = ctx.params.lastId && new Date(ctx.params.lastId);
 				const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
 				let query = this.rTable
-					.between(this.r.minval, lastId || this.r.maxval)
-					.orderBy(this.r.desc('id'))
+					.between(this.r.minval, lastId || this.r.maxval, {
+						index: 'createdAt',
+						rightBound: 'open'
+					})
+					.orderBy(this.r.desc('createdAt'))
 					.filter(this.r.row('broadcaster').eq(broadcaster));
 
 				if (typeof limit !== 'undefined') {
 					query = query.limit(limit);
 				}
 
-				return await query;
+				const items = await query;
+
+				if (items.length === 0 || items[items.length - 1].createdAt.valueOf() === this.lastId.valueOf()) {
+					return { items, all: true };
+				} else {
+					return { items, all: false };
+				}
       }
     },
 		request: {
@@ -53,19 +86,19 @@ module.exports = {
 			async handler(ctx) {
 				const { broadcaster, tabId, msgId, content } = ctx.params;
 
-				this.logger.debug(`translaton request from ${broadcaster}: ${content}`);
-
-				await ctx.call('gateway.app.broadcast', {
-					subject: 'request-translation',
-					data: { broadcaster, tabId, msgId, content }
-				});
+				const createdAt = new Date;
 
 				await this.rTable.insert({
 					broadcaster,
 					tabId,
 					msgId,
 					content,
-					createdAt: new Date
+					createdAt
+				});
+
+				await ctx.call('gateway.app.broadcast', {
+					subject: 'request-translation',
+					data: { broadcaster, tabId, msgId, content, createdAt }
 				});
 			}
 		},
@@ -78,14 +111,12 @@ module.exports = {
 			async handler(ctx) {
 				const { tabId, msgId } = ctx.params;
 
-				this.logger.debug(`cancel translation request`);
+				await this.rTable.getAll([tabId, msgId], { index: 'tabid_msgid' }).delete();
 
 				await ctx.call('gateway.app.broadcast', {
 					subject: 'request-cancel-translation',
 					data: { tabId, msgId }
 				});
-
-				await this.rTable.getAll([tabId, msgId], { index: 'tabid_msgid' }).delete();
 			}
 		},
 		resolve: {
@@ -98,14 +129,12 @@ module.exports = {
 			async handler(ctx) {
 				const { tabId, msgId, content } = ctx.params;
 
-				this.logger.debug(`translation request resolved: ${content}`);
+				await this.rTable.getAll([tabId, msgId], { index: 'tabid_msgid' }).delete();
 
 				await ctx.call('gateway.ext.broadcast', {
 					subject: 'translation',
 					data: { tabId, msgId, content }
 				});
-
-				await this.rTable.getAll([tabId, msgId], { index: 'tabid_msgid' }).delete();
 			}
 		}
   }
