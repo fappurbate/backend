@@ -26,7 +26,8 @@ module.exports = {
 			extensions_storage: true,
 			extensions: {
 				$default: true,
-				name: true
+				name: true,
+				createdAt: true
 			}
 		}
 	},
@@ -47,50 +48,69 @@ module.exports = {
 		this.extracting = {};
   },
 	async rOnReady() {
-		const cursor = await this.r.table('extensions_storage').changes({
-			includeTypes: true
-		});
-		cursor.each(async (error, change) => {
-			if (error) {
-				this.logger.warn(`Error while listening to changes in the 'extensions_storage' table.`, { error });
-				return;
-			}
+		this.lastId = await this.getLastId();
 
-			if (change.type === 'add') {
-				const data = {
-					extensionId: change.new_val.id[0],
-					broadcaster: change.new_val.id[1],
-					key: change.new_val.id[2],
-					oldValue: undefined,
-					newValue: msgpack.decode(change.new_val.value)
-				};
-				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
-				this.broker.emit('extensions-storage.change', data);
-				this.apiEventHandlers.emit('extensions-storage-change', data);
-			} else if (change.type === 'remove') {
-				const data = {
-					extensionId: change.old_val.id[0],
-					broadcaster: change.old_val.id[1],
-					key: change.old_val.id[2],
-					oldValue: msgpack.decode(change.old_val.value),
-					newValue: undefined
-				};
-				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
-				this.broker.emit('extensions-storage.change', data);
-				this.apiEventHandlers.emit('extensions-storage-change', data);
-			} else if (change.type === 'change') {
-				const data = {
-					extensionId: change.new_val.id[0],
-					broadcaster: change.new_val.id[1],
-					key: change.new_val.id[2],
-					oldValue: msgpack.decode(change.old_val.value),
-					newValue: msgpack.decode(change.new_val.value)
-				};
-				await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
-				this.broker.emit('extensions-storage.change', data);
-				this.apiEventHandlers.emit('extensions-storage-change', data);
-			}
-		});
+		await this.r.table('extensions_storage').changes({
+			includeTypes: true
+		}).then(cursor =>
+			cursor.each(async (error, change) => {
+				if (error) {
+					this.logger.warn(`Error while listening to changes in the 'extensions_storage' table.`, { error });
+					return;
+				}
+
+				if (change.type === 'add') {
+					const data = {
+						extensionId: change.new_val.id[0],
+						broadcaster: change.new_val.id[1],
+						key: change.new_val.id[2],
+						oldValue: undefined,
+						newValue: msgpack.decode(change.new_val.value)
+					};
+					await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
+					this.broker.emit('extensions-storage.change', data);
+					this.apiEventHandlers.emit('extensions-storage-change', data);
+				} else if (change.type === 'remove') {
+					const data = {
+						extensionId: change.old_val.id[0],
+						broadcaster: change.old_val.id[1],
+						key: change.old_val.id[2],
+						oldValue: msgpack.decode(change.old_val.value),
+						newValue: undefined
+					};
+
+					await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
+					this.broker.emit('extensions-storage.change', data);
+					this.apiEventHandlers.emit('extensions-storage-change', data);
+				} else if (change.type === 'change') {
+					const data = {
+						extensionId: change.new_val.id[0],
+						broadcaster: change.new_val.id[1],
+						key: change.new_val.id[2],
+						oldValue: msgpack.decode(change.old_val.value),
+						newValue: msgpack.decode(change.new_val.value)
+					};
+					await this.broker.call('gateway.app.broadcast', { subject: 'extensions-storage-change', data });
+					this.broker.emit('extensions-storage.change', data);
+					this.apiEventHandlers.emit('extensions-storage-change', data);
+				}
+			})
+		);
+
+		await this.rTable.changes({ includeTypes: true }).then(cursor =>
+			cursor.each(async (error, change) => {
+				if (error) {
+					this.logger.warn(`Error while listening to changes in the 'extensions' table.`, { error });
+					return;
+				}
+
+				if (change.type === 'remove') {
+					if (this.lastId && change.old_val.createdAt.valueOf() === this.lastId.valueOf()) {
+						this.lastId = await this.getLastId();
+					}
+				}
+			})
+		);
 	},
   methods: {
     getBroadcasterVMs(broadcaster) {
@@ -119,6 +139,11 @@ module.exports = {
 				}));
 
 			return count;
+		},
+		getLastId() {
+			return this.rTable
+				.orderBy({ index: this.r.asc('createdAt') })
+				.limit(1).getField('createdAt').nth(0).default(null);
 		}
   },
 	events: {
@@ -311,7 +336,8 @@ module.exports = {
         }
 
 				const { changes: [{ new_val: extension }]} = await this.rTable.insert({
-					...manifest
+					...manifest,
+					createdAt: new Date
 				}, { returnChanges: true });
 
         const newExtensionPath = path.join(this.settings.path, extension.id);
@@ -464,12 +490,16 @@ module.exports = {
 			},
 			visibility: 'published',
 			async handler(ctx) {
-				const { broadcaster, lastId } = ctx.params;
+				const { broadcaster } = ctx.params;
+				const lastId = ctx.params.lastId && new Date(ctx.params.lastId);
 				const limit = typeof ctx.params.limit !== 'undefined' ? Number(ctx.params.limit) : undefined;
 
 				let query = this.rTable
-					.between(this.r.minval, lastId || this.r.maxval, { index: 'name', leftBound: 'open' })
-					.orderBy(this.r.asc('name'));
+					.between(this.r.minval, lastId || this.r.maxval, {
+						index: 'createdAt',
+						rightBound: 'open'
+					})
+					.orderBy(this.r.desc('createdAt'));
 
 				if (typeof limit !== 'undefined') {
 					query = query.limit(limit);
@@ -477,10 +507,16 @@ module.exports = {
 
 				const vms = this.getBroadcasterVMs(broadcaster);
 
-				return await query.then(extensions => extensions.map(extension => ({
+				const items = await query.then(extensions => extensions.map(extension => ({
 					...extension,
 					running: extension.id in vms
 				})));
+
+				if (items.length === 0 || items[items.length - 1].createdAt.valueOf() === this.lastId.valueOf()) {
+					return { items, all: true };
+				} else {
+					return { items, all: false };
+				}
 			}
 		},
 		oneForBroadcaster: {
