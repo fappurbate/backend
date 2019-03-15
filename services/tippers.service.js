@@ -18,6 +18,30 @@ module.exports = {
 			}
 		}
 	},
+	async rOnReady() {
+		this.lastId = await this.getLastId();
+
+		const cursor = await this.rTable.changes({ includeTypes: true });
+		cursor.each(async (err, change) => {
+			if (err) {
+				this.logger.warn(`Error while listening to changes in the 'tippers' table.`);
+				return;
+			}
+
+			if (change.type === 'add') {
+				this.lastId = change.new_val.username;
+			} else if (change.type === 'remove') {
+				if (this.lastId && change.old_val.username === this.lastId) {
+					this.lastId = await this.getLastId();
+				}
+			}
+		});
+	},
+	methods: {
+		getLastId() {
+			return this.rTable.orderBy(this.r.desc('username')).limit(1).getField('username').nth(0).default(null);
+		}
+	},
   actions: {
     addTip: {
       params: {
@@ -76,7 +100,13 @@ module.exports = {
 					}).without('tipInfo')
 				);
 
-				return await query;
+				const items = await query;
+
+				if (items.length === 0 || items[items.length - 1].username === this.lastId) {
+					return { items, all: true };
+				} else {
+					return { items, all: false };
+				}
       }
     },
 		oneForBroadcaster: {
