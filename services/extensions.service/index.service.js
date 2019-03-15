@@ -116,6 +116,9 @@ module.exports = {
     getBroadcasterVMs(broadcaster) {
       return this.vmsByBroadcaster[broadcaster] || (this.vmsByBroadcaster[broadcaster] = {});
     },
+		removeBroadcasterVMs(broadcaster) {
+			delete this.vmsByBroadcaster[broadcaster];
+		},
 		isBroadcasting(broadcaster) {
 			let count = 0;
 
@@ -210,6 +213,22 @@ module.exports = {
 			const { file } = payload;
 
 			this.apiEventHandlers.emit('gallery-remove', { file });
+		},
+		async 'broadcasters.remove'(payload) {
+			const { username } = payload;
+
+
+			const vms = this.getBroadcasterVMs(username);
+			this.logger.info(`Broadcaster '${username}' has been deleted, stopping their ${Object.keys(vms).length} running extensions...`);
+
+			await Promise.all(Object.keys(vms).map(extensionId =>
+				this.broker.call('extensions.stop', {
+					extensionId,
+					broadcaster: username
+				})
+			));
+
+			this.removeBroadcasterVMs(username);
 		}
 	},
   actions: {
