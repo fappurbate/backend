@@ -119,7 +119,7 @@ module.exports = {
 				const { username, broadcaster } = ctx.params;
 
 				return await this.rTable.get(username).do(tipper => {
-					if (tipper && tipper('tipInfo')(broadcaster)) {
+					if (tipper.typeOf() === 'OBJECT' && tipper('tipInfo')(broadcaster)) {
 						return {
 							username,
 							amount: tipper('tipInfo')(broadcaster)
