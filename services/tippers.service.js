@@ -118,16 +118,14 @@ module.exports = {
 			async handler(ctx) {
 				const { username, broadcaster } = ctx.params;
 
-				return await this.rTable.get(username).do(tipper => {
-					if (tipper.typeOf() === 'OBJECT' && tipper('tipInfo')(broadcaster)) {
-						return {
-							username,
-							amount: tipper('tipInfo')(broadcaster)
-						};
-					}
-
-					return { username, amount: 0 };
-				});
+				return await this.rTable.get(username).do(tipper => ({
+					username,
+					amount: this.r.branch(
+						this.r.and(tipper, tipper('tipInfo')(broadcaster)),
+						tipper('tipInfo')(broadcaster),
+						0
+					)
+				}));
 			}
 		}
   }
