@@ -104,7 +104,9 @@ module.exports = {
 					return;
 				}
 
-				if (change.type === 'remove') {
+				if (change.type === 'add' && this.lastId === null) {
+					this.lastId = change.new_val.createdAt;
+				} else if (change.type === 'remove') {
 					if (this.lastId && change.old_val.createdAt.valueOf() === this.lastId.valueOf()) {
 						this.lastId = await this.getLastId();
 					}
