@@ -43,7 +43,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.2.5",
     "@kothique/moleculer-io": "^1.0.4",
-    "@kothique/moleculer-rethinkdbdash": "^0.1.0",
+    "@kothique/moleculer-rethinkdbdash": "^1.0.1",
     "@kothique/request-target": "^2.3.1",
     "@kothique/winston-nedb": "^1.0.1",
     "ajv": "^6.9.1",
